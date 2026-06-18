@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tufting Atölyesi Yönetim Paneli</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo-icon">T</div>
+                <div>
+                    <h2>Tufting Atölyesi</h2>
+                    <p>Yönetim Paneli v2.0</p>
+                </div>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+                <button class="nav-btn" data-tab="calculator">Maliyet Hesaplayıcı</button>
+                <button class="nav-btn" data-tab="stock">Stok ve Satın Alma</button>
+                <button class="nav-btn" data-tab="sales">Satış Defteri</button>
+                <button class="nav-btn" data-tab="partner">Ortaklık & Cari Hesap</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            
+            <section class="tab-panel active" id="dashboard">
+                <div class="panel-header">
+                    <h1>Atölye Kontrol Merkezi</h1>
+                    <button class="danger-button" id="resetDataBtn">Tüm Verileri Sıfırla</button>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Atölye Nakit Kasası</h3>
+                        <div class="stat-value" id="dashCash">₺0,00</div>
+                        <p>Kasadaki anlık net nakit</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Toplam Alacaklar</h3>
+                        <div class="stat-value alert" id="dashReceivables">₺0,00</div>
+                        <p>Müşterilerden beklenen tutar</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Toplam Giderler</h3>
+                        <div class="stat-value" id="dashExpenses">₺0,00</div>
+                        <p>Malzeme ve genel masraflar</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid partner-stats">
+                    <div class="stat-card partner-card semih">
+                        <h3>Semih Cari Hesap</h3>
+                        <div class="stat-value" id="dashSemih">₺0,00</div>
+                        <p>Cebinden harcanan + koyulan sermaye</p>
+                    </div>
+                    <div class="stat-card partner-card ekrem">
+                        <h3>Ekrem Cari Hesap</h3>
+                        <div class="stat-value" id="dashEkrem">₺0,00</div>
+                        <p>Cebinden harcanan + koyulan sermaye</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-tables">
+                    <div class="panel-box">
+                        <h3>Kritik Stok Uyarıları</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Malzeme</th><th>Miktar</th><th>Kritik Eşik</th><th>Durum</th></tr>
+                            </thead>
+                            <tbody id="dashStockAlerts"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="calculator">
+                <div class="panel-header">
+                    <h1>Maliyet ve Fiyat Hesaplayıcı</h1>
+                </div>
+                <div class="grid-2-1">
+                    <form class="panel-box" id="calcForm">
+                        <div class="form-grid">
+                            <label>İp Gramajı (g) <input type="number" id="calcYarnWeight" value="1000" required></label>
+                            <label>İp KG Fiyatı (TL) <input type="number" id="calcYarnPrice" value="180" required></label>
+                            <label>Halı Eni (cm) <input type="number" id="calcWidth" value="100" required></label>
+                            <label>Halı Boyu (cm) <input type="number" id="calcHeight" value="150" required></label>
+                            <label>Kumaş m² Fiyatı (TL) <input type="number" id="calcClothPrice" value="95" required></label>
+                            <label>Tutkal Maliyeti (TL) <input type="number" id="calcGlueCost" value="120" required></label>
+                            <label>Kaydırmaz Taban (TL) <input type="number" id="calcBaseCost" value="75" required></label>
+                            <label>Elektrik / Sabit Gider (TL) <input type="number" id="calcFixCost" value="50" required></label>
+                            <label>İşçilik Maliyeti (TL) <input type="number" id="calcLaborCost" value="350" required></label>
+                            <label>Hedef Kâr Marjı (%) <input type="number" id="calcProfitMargin" value="45" required></label>
+                        </div>
+                        <button type="submit" class="primary-button">Maliyeti Hesapla</button>
+                    </form>
+                    <div class="panel-box result-box">
+                        <h3>Hesaplama Sonuçları</h3>
+                        <div class="result-item"><span>Net Malzeme Maliyeti:</span><strong id="resMaterial">₺0,00</strong></div>
+                        <div class="result-item"><span>Toplam Net Maliyet:</span><strong id="resTotalCost">₺0,00</strong></div>
+                        <div class="result-item" style="border-top: 2px dashed #444; padding-top: 15px;">
+                            <span>Önerilen Satış Fiyatı:</span><strong id="resSalePrice" class="text-green">₺0,00</strong>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="stock">
+                <div class="panel-header">
+                    <h1>Stok Yönetimi & Satın Alma Giderleri</h1>
+                </div>
+                <div class="grid-1-2">
+                    <form class="panel-box" id="stockForm">
+                        <h3>Yeni Malzeme Alımı / Gider Ekle</h3>
+                        <label>Kategori
+                            <select id="stockCategory" required>
+                                <option value="İp">İp</option>
+                                <option value="Kumaş">Kumaş</option>
+                                <option value="Tutkal">Tutkal</option>
+                                <option value="Bakım/Yedek Parça">Bakım / Yedek Parça</option>
+                                <option value="Diğer Gider">Diğer Gider</option>
+                            </select>
+                        </label>
+                        <label>Malzeme/Açıklama Adı <input type="text" id="stockName" placeholder="Örn: Zümrüt Yeşil İp, Tabanca Yağı" required></label>
+                        <div class="form-grid">
+                            <label>Miktar <input type="number" id="stockQty" step="0.01" required></label>
+                            <label>Birim <input type="text" id="stockUnit" placeholder="Örn: kg, m², adet" required></label>
+                        </div>
+                        <label>Kritik Eşik Miktarı <input type="number" id="stockThreshold" step="0.01" value="0"></label>
+                        <label>Toplam Alım Tutarı (TL) <input type="number" id="stockTotalCost" step="0.01" required></label>
+                        <label>Ödemeyi Kim Yaptı?
+                            <select id="stockPayer" required>
+                                <option value="Atölye Kasası">Atölye Kasası (Ortak Kasa)</option>
+                                <option value="Semih">Semih (Cebinden Ödedi)</option>
+                                <option value="Ekrem">Ekrem (Cebinden Ödedi)</option>
+                            </select>
+                        </label>
+                        <button type="submit" class="primary-button">Gideri ve Stoğu Kaydet</button>
+                    </form>
+
+                    <div class="panel-box">
+                        <h3>Güncel Stok Listesi ve Depo Durumu</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Kategori</th><th>Malzeme</th><th>Stok Miktarı</th><th>Eşik</th><th>İşlem</th></tr>
+                            </thead>
+                            <tbody id="stockTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="sales">
+                <div class="panel-header">
+                    <h1>Sipariş ve Satış Defteri</h1>
+                </div>
+                <div class="grid-1-2">
+                    <form class="panel-box" id="saleForm">
+                        <h3>Yeni Satış Kaydı</h3>
+                        <label>Müşteri Adı Soyadı <input type="text" id="saleCustomer" required></label>
+                        <label>Halı Modeli / Ölçüsü <input type="text" id="saleModel" placeholder="Örn: Dalga Logolu 90x120" required></label>
+                        <div class="form-grid">
+                            <label>Satış Fiyatı (TL) <input type="number" id="salePrice" step="0.01" required></label>
+                            <label>Hesaplanan Maliyet (TL) <input type="number" id="saleCost" step="0.01" required></label>
+                        </div>
+                        <label>Tahsil Edilen Tutar (TL) <input type="number" id="salePaid" step="0.01" required></label>
+                        <button type="submit" class="primary-button">Satışı Kaydet</button>
+                    </form>
+
+                    <div class="panel-box">
+                        <h3>Satış ve Sipariş Kayıtları</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Müşteri</th><th>Model</th><th>Satış</th><th>Maliyet</th><th>Tahsil Edilen</th><th>Kalan Alacak</th><th>İşlem</th></tr>
+                            </thead>
+                            <tbody id="salesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tab-panel" id="partner">
+                <div class="panel-header">
+                    <h1>Ortaklık Cari Hesapları & Sermaye Takibi</h1>
+                </div>
+                <div class="grid-1-2">
+                    <form class="panel-box" id="partnerForm">
+                        <h3>Ortaklar Arası Nakit Hareketi Ekle</h3>
+                        <label>İşlemi Yapan Ortak
+                            <select id="partPerson" required>
+                                <option value="Semih">Semih</option>
+                                <option value="Ekrem">Ekrem</option>
+                            </select>
+                        </label>
+                        <label>İşlem Tipi
+                            <select id="partType" required>
+                                <option value="sermaye">Atölyeye Doğrudan Sermaye Koydu</option>
+                                <option value="cekme">Kasadaki Kârdan Para Çekti (Maddi Çekim)</option>
+                            </select>
+                        </label>
+                        <label>Tutar (TL) <input type="number" id="partAmount" step="0.01" required></label>
+                        <label>Açıklama Notu <input type="text" id="partNote" placeholder="Örn: Kira ödemesi için nakit desteği" required></label>
+                        <button type="submit" class="primary-button">Hareketi Cari Hesaba İşle</button>
+                    </form>
+
+                    <div class="panel-box">
+                        <h3>Ortaklık Cari Hareket Logları</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>Ortak</th><th>İşlem Tipi</th><th>Tutar</th><th>Açıklama</th><th>İşlem</th></tr>
+                            </thead>
+                            <tbody id="partnerTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script src="script.js"></script>
+</body>
+</html>
