@@ -13,7 +13,7 @@
                 <div class="logo-icon">T</div>
                 <div>
                     <h2>Tufting Atölyesi</h2>
-                    <p>Yönetim Paneli v2.0</p>
+                    <p>Yönetim Paneli v2.1</p>
                 </div>
             </div>
             <nav class="nav-menu">
@@ -35,9 +35,14 @@
                 
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Atölye Nakit Kasası</h3>
-                        <div class="stat-value" id="dashCash">₺0,00</div>
-                        <p>Kasadaki anlık net nakit</p>
+                        <h3>Net Kâr / Zarar</h3>
+                        <div class="stat-value" id="dashNetProfit">₺0,00</div>
+                        <p>Toplam Satış - Toplam Gider</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Cari Mutabakat Durumu</h3>
+                        <div class="stat-value alert" id="dashMutabakat" style="font-size: 16px; line-height: 1.4; color: #f39c12;">Hesaplar Hesaplanıyor...</div>
+                        <p>Ortaklar arası borç/alacak</p>
                     </div>
                     <div class="stat-card">
                         <h3>Toplam Alacaklar</h3>
@@ -53,18 +58,18 @@
 
                 <div class="stats-grid partner-stats">
                     <div class="stat-card partner-card semih">
-                        <h3>Semih Cari Hesap</h3>
+                        <h3>Semih Toplam Harcama</h3>
                         <div class="stat-value" id="dashSemih">₺0,00</div>
-                        <p>Cebinden harcanan + koyulan sermaye</p>
+                        <p>Cebinden atölye için harcadığı</p>
                     </div>
                     <div class="stat-card partner-card ekrem">
-                        <h3>Ekrem Cari Hesap</h3>
+                        <h3>Ekrem Toplam Harcama</h3>
                         <div class="stat-value" id="dashEkrem">₺0,00</div>
-                        <p>Cebinden harcanan + koyulan sermaye</p>
+                        <p>Cebinden atölye için harcadığı</p>
                     </div>
                 </div>
 
-                <div class="dashboard-tables">
+                <div class="dashboard-tables grid-2-1">
                     <div class="panel-box">
                         <h3>Kritik Stok Uyarıları</h3>
                         <table class="data-table">
@@ -74,6 +79,25 @@
                             <tbody id="dashStockAlerts"></tbody>
                         </table>
                     </div>
+
+                    <form class="panel-box" id="quickExpenseForm" style="border: 1px solid #2ecc71;">
+                        <h3>⚡ Hızlı Gider İşle</h3>
+                        <label>Gider Kalemi
+                            <select id="quickExpenseItem" required>
+                                <option value="">Önce stoktan kalem tanımlayın</option>
+                            </select>
+                        </label>
+                        <div class="form-grid">
+                            <label>Tutar (TL) <input type="number" id="quickExpenseAmount" step="0.01" required></label>
+                            <label>Kim Ödedi?
+                                <select id="quickExpensePayer" required>
+                                    <option value="Semih">Semih</option>
+                                    <option value="Ekrem">Ekrem</option>
+                                </select>
+                            </label>
+                        </div>
+                        <button type="submit" class="primary-button">Hızlı İşle</button>
+                    </form>
                 </div>
             </section>
 
@@ -110,35 +134,47 @@
 
             <section class="tab-panel" id="stock">
                 <div class="panel-header">
-                    <h1>Stok Yönetimi & Satın Alma Giderleri</h1>
+                    <h1>Ürün Kataloğu & Stok Yönetimi</h1>
                 </div>
-                <div class="grid-1-2">
-                    <form class="panel-box" id="stockForm">
-                        <h3>Yeni Malzeme Alımı / Gider Ekle</h3>
+
+                <div class="panel-box" style="margin-bottom: 25px; border-left: 4px solid #3498db;">
+                    <h3>📖 1. Adım: Yeni Gider / Ürün Kalemi Tanımla (Katalog)</h3>
+                    <form id="catalogForm" class="form-grid" style="align-items: end;">
                         <label>Kategori
-                            <select id="stockCategory" required>
+                            <select id="catalogCategory" required>
                                 <option value="İp">İp</option>
                                 <option value="Kumaş">Kumaş</option>
                                 <option value="Tutkal">Tutkal</option>
                                 <option value="Bakım/Yedek Parça">Bakım / Yedek Parça</option>
-                                <option value="Diğer Gider">Diğer Gider</option>
+                                <option value="Sabit Gider">Sabit Gider (Kira, Kargo vb.)</option>
                             </select>
                         </label>
-                        <label>Malzeme/Açıklama Adı <input type="text" id="stockName" placeholder="Örn: Zümrüt Yeşil İp, Tabanca Yağı" required></label>
+                        <label>Kalem Adı <input type="text" id="catalogName" placeholder="Örn: Zümrüt Yeşil İp" required></label>
+                        <label>Birim <input type="text" id="catalogUnit" placeholder="Örn: kg, m², adet" required></label>
+                        <button type="submit" class="primary-button" style="background-color: #3498db; color: white;">Kataloğa Ekle</button>
+                    </form>
+                </div>
+
+                <div class="grid-1-2">
+                    <form class="panel-box" id="stockForm">
+                        <h3>🛒 2. Adım: Stok ve Gider İşle</h3>
+                        <label>Katalogdan Seç
+                            <select id="stockItemSelect" required>
+                                <option value="">Önce yukarıdan kalem tanımlayın</option>
+                            </select>
+                        </label>
                         <div class="form-grid">
-                            <label>Miktar <input type="number" id="stockQty" step="0.01" required></label>
-                            <label>Birim <input type="text" id="stockUnit" placeholder="Örn: kg, m², adet" required></label>
+                            <label>Alınan Miktar <input type="number" id="stockQty" step="0.01" required></label>
+                            <label>Kritik Eşik Uyarı Seviyesi <input type="number" id="stockThreshold" step="0.01" value="0"></label>
                         </div>
-                        <label>Kritik Eşik Miktarı <input type="number" id="stockThreshold" step="0.01" value="0"></label>
                         <label>Toplam Alım Tutarı (TL) <input type="number" id="stockTotalCost" step="0.01" required></label>
                         <label>Ödemeyi Kim Yaptı?
                             <select id="stockPayer" required>
-                                <option value="Atölye Kasası">Atölye Kasası (Ortak Kasa)</option>
                                 <option value="Semih">Semih (Cebinden Ödedi)</option>
                                 <option value="Ekrem">Ekrem (Cebinden Ödedi)</option>
                             </select>
                         </label>
-                        <button type="submit" class="primary-button">Gideri ve Stoğu Kaydet</button>
+                        <button type="submit" class="primary-button">Stoğa Ekle ve Gideri Yaz</button>
                     </form>
 
                     <div class="panel-box">
@@ -164,9 +200,8 @@
                         <label>Halı Modeli / Ölçüsü <input type="text" id="saleModel" placeholder="Örn: Dalga Logolu 90x120" required></label>
                         <div class="form-grid">
                             <label>Satış Fiyatı (TL) <input type="number" id="salePrice" step="0.01" required></label>
-                            <label>Hesaplanan Maliyet (TL) <input type="number" id="saleCost" step="0.01" required></label>
+                            <label>Tahsil Edilen Tutar (TL) <input type="number" id="salePaid" step="0.01" required></label>
                         </div>
-                        <label>Tahsil Edilen Tutar (TL) <input type="number" id="salePaid" step="0.01" required></label>
                         <button type="submit" class="primary-button">Satışı Kaydet</button>
                     </form>
 
@@ -174,7 +209,7 @@
                         <h3>Satış ve Sipariş Kayıtları</h3>
                         <table class="data-table">
                             <thead>
-                                <tr><th>Müşteri</th><th>Model</th><th>Satış</th><th>Maliyet</th><th>Tahsil Edilen</th><th>Kalan Alacak</th><th>İşlem</th></tr>
+                                <tr><th>Müşteri</th><th>Model</th><th>Satış Tutarı</th><th>Tahsil Edilen</th><th>Kalan Alacak</th><th>İşlem</th></tr>
                             </thead>
                             <tbody id="salesTableBody"></tbody>
                         </table>
@@ -184,33 +219,30 @@
 
             <section class="tab-panel" id="partner">
                 <div class="panel-header">
-                    <h1>Ortaklık Cari Hesapları & Sermaye Takibi</h1>
+                    <h1>Ortaklık Cari Hesapları & Nakit Çekim</h1>
                 </div>
                 <div class="grid-1-2">
                     <form class="panel-box" id="partnerForm">
-                        <h3>Ortaklar Arası Nakit Hareketi Ekle</h3>
-                        <label>İşlemi Yapan Ortak
+                        <h3>Kârdan Para Çekme (Mahsuplaşma)</h3>
+                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">
+                            * Atölyeye yapılan harcamalar doğrudan "Stok ve Gider" bölümünden girilmelidir. Burası yalnızca ortakların kârdan şahsi hesaplarına para çekmesi içindir.
+                        </p>
+                        <label>Para Çeken Ortak
                             <select id="partPerson" required>
                                 <option value="Semih">Semih</option>
                                 <option value="Ekrem">Ekrem</option>
                             </select>
                         </label>
-                        <label>İşlem Tipi
-                            <select id="partType" required>
-                                <option value="sermaye">Atölyeye Doğrudan Sermaye Koydu</option>
-                                <option value="cekme">Kasadaki Kârdan Para Çekti (Maddi Çekim)</option>
-                            </select>
-                        </label>
                         <label>Tutar (TL) <input type="number" id="partAmount" step="0.01" required></label>
-                        <label>Açıklama Notu <input type="text" id="partNote" placeholder="Örn: Kira ödemesi için nakit desteği" required></label>
-                        <button type="submit" class="primary-button">Hareketi Cari Hesaba İşle</button>
+                        <label>Açıklama Notu <input type="text" id="partNote" placeholder="Örn: Aylık kâr payı çekimi" required></label>
+                        <button type="submit" class="primary-button">Çekimi Cari Hesaba İşle</button>
                     </form>
 
                     <div class="panel-box">
-                        <h3>Ortaklık Cari Hareket Logları</h3>
+                        <h3>Nakit Çekim Logları</h3>
                         <table class="data-table">
                             <thead>
-                                <tr><th>Ortak</th><th>İşlem Tipi</th><th>Tutar</th><th>Açıklama</th><th>İşlem</th></tr>
+                                <tr><th>Ortak</th><th>Tutar</th><th>Açıklama</th><th>İşlem</th></tr>
                             </thead>
                             <tbody id="partnerTableBody"></tbody>
                         </table>
@@ -221,7 +253,6 @@
     </div>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    
     <script src="script.js"></script>
 </body>
 </html>
