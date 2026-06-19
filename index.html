@@ -13,7 +13,7 @@
                 <div class="logo-icon">T</div>
                 <div>
                     <h2>Tufting Atölyesi</h2>
-                    <p>Yönetim Paneli v2.1</p>
+                    <p>Yönetim Paneli v2.6</p>
                 </div>
             </div>
             <nav class="nav-menu">
@@ -44,28 +44,33 @@
                         <div class="stat-value alert" id="dashMutabakat" style="font-size: 16px; line-height: 1.4; color: #f39c12;">Hesaplar Hesaplanıyor...</div>
                         <p>Ortaklar arası borç/alacak</p>
                     </div>
-                    <div class="stat-card">
-                        <h3>Toplam Alacaklar</h3>
-                        <div class="stat-value alert" id="dashReceivables">₺0,00</div>
-                        <p>Müşterilerden beklenen tutar</p>
+                    <div class="stat-card" style="cursor:pointer;" onclick="showDetails('gelirler')" title="Tıklayıp satış detaylarını görün">
+                        <h3>Toplam Gelir (Ciro) 🔍</h3>
+                        <div class="stat-value" id="dashIncome" style="color: #3498db;">₺0,00</div>
+                        <p>Tüm satışlar (Detay için tıkla)</p>
                     </div>
-                    <div class="stat-card">
-                        <h3>Toplam Giderler</h3>
-                        <div class="stat-value" id="dashExpenses">₺0,00</div>
-                        <p>Malzeme ve genel masraflar</p>
+                    <div class="stat-card" style="cursor:pointer;" onclick="showDetails('alacaklar')" title="Tıklayıp bekleyen borçluları görün">
+                        <h3>Toplam Alacaklar 🔍</h3>
+                        <div class="stat-value alert" id="dashReceivables">₺0,00</div>
+                        <p>Müşteriden Beklenen (Detay tıkla)</p>
+                    </div>
+                    <div class="stat-card" style="border-top: 3px solid #e74c3c; cursor:pointer;" onclick="showDetails('giderler')" title="Tıklayıp tüm giderleri görün">
+                        <h3>Toplam Giderler 🔍</h3>
+                        <div class="stat-value" id="dashExpenses" style="color: #e74c3c;">₺0,00</div>
+                        <p>Harcamalar (Detay için tıkla)</p>
                     </div>
                 </div>
 
                 <div class="stats-grid partner-stats">
-                    <div class="stat-card partner-card semih">
-                        <h3>Semih Toplam Harcama</h3>
-                        <div class="stat-value" id="dashSemih">₺0,00</div>
-                        <p>Cebinden atölye için harcadığı</p>
+                    <div class="stat-card partner-card semih" style="cursor:pointer;" onclick="showPartnerDetails('Semih')" title="Semih'in hesap hareketleri için tıkla">
+                        <h3>Semih Cari Durum 🔍</h3>
+                        <div class="stat-value" id="dashSemih">Atölye Harcaması: ₺0,00</div>
+                        <p id="dashSemihTahsilat" style="color: #3498db; margin-top: 5px;">Cebine Giren Tahsilat: ₺0,00</p>
                     </div>
-                    <div class="stat-card partner-card ekrem">
-                        <h3>Ekrem Toplam Harcama</h3>
-                        <div class="stat-value" id="dashEkrem">₺0,00</div>
-                        <p>Cebinden atölye için harcadığı</p>
+                    <div class="stat-card partner-card ekrem" style="cursor:pointer;" onclick="showPartnerDetails('Ekrem')" title="Ekrem'in hesap hareketleri için tıkla">
+                        <h3>Ekrem Cari Durum 🔍</h3>
+                        <div class="stat-value" id="dashEkrem">Atölye Harcaması: ₺0,00</div>
+                        <p id="dashEkremTahsilat" style="color: #9b59b6; margin-top: 5px;">Cebine Giren Tahsilat: ₺0,00</p>
                     </div>
                 </div>
 
@@ -88,17 +93,29 @@
                             </select>
                         </label>
                         <div class="form-grid">
+                            <label>İşlem Tarihi <input type="date" id="quickExpenseDate" required></label>
                             <label>Tutar (TL) <input type="number" id="quickExpenseAmount" step="0.01" required></label>
-                            <label>Kim Ödedi?
-                                <select id="quickExpensePayer" required>
-                                    <option value="Semih">Semih</option>
-                                    <option value="Ekrem">Ekrem</option>
-                                </select>
-                            </label>
                         </div>
+                        <label>Kim Ödedi?
+                            <select id="quickExpensePayer" required>
+                                <option value="Semih">Semih</option>
+                                <option value="Ekrem">Ekrem</option>
+                            </select>
+                        </label>
                         <button type="submit" class="primary-button">Hızlı İşle</button>
                     </form>
                 </div>
+
+                <div class="panel-box" style="margin-top: 25px; border-left: 4px solid #f1c40f;">
+                    <h3>⏳ Bekleyen Alacaklar (Borçlu Müşteriler Listesi)</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Tarih</th><th>Müşteri Adı</th><th>Halı Modeli</th><th>Toplam Satış</th><th>Tahsil Edilen</th><th>Kalan Borç</th><th>Aksiyon</th></tr>
+                        </thead>
+                        <tbody id="dashDebtorsTableBody"></tbody>
+                    </table>
+                </div>
+
             </section>
 
             <section class="tab-panel" id="calculator">
@@ -141,16 +158,16 @@
                     <h3>📖 1. Adım: Yeni Gider / Ürün Kalemi Tanımla (Katalog)</h3>
                     <form id="catalogForm" class="form-grid" style="align-items: end;">
                         <label>Kategori
-                            <select id="catalogCategory" required>
-                                <option value="İp">İp</option>
-                                <option value="Kumaş">Kumaş</option>
-                                <option value="Tutkal">Tutkal</option>
-                                <option value="Bakım/Yedek Parça">Bakım / Yedek Parça</option>
-                                <option value="Sabit Gider">Sabit Gider (Kira, Kargo vb.)</option>
-                            </select>
+                            <input type="text" id="catalogCategory" list="catDatalist" placeholder="Örn: İp, Reklam, Sabit Gider..." required>
+                            <datalist id="catDatalist">
+                                <option value="İp"></option>
+                                <option value="Kumaş"></option>
+                                <option value="Reklam & Pazarlama"></option>
+                                <option value="Sabit Gider"></option>
+                            </datalist>
                         </label>
-                        <label>Kalem Adı <input type="text" id="catalogName" placeholder="Örn: Zümrüt Yeşil İp" required></label>
-                        <label>Birim <input type="text" id="catalogUnit" placeholder="Örn: kg, m², adet" required></label>
+                        <label>Kalem Adı <input type="text" id="catalogName" placeholder="Örn: Instagram Reklamı, Zümrüt İp" required></label>
+                        <label>Birim (İsteğe Bağlı) <input type="text" id="catalogUnit" placeholder="Boş bırakabilirsiniz"></label>
                         <button type="submit" class="primary-button" style="background-color: #3498db; color: white;">Kataloğa Ekle</button>
                     </form>
                 </div>
@@ -164,8 +181,9 @@
                             </select>
                         </label>
                         <div class="form-grid">
+                            <label>İşlem Tarihi <input type="date" id="stockDate" required></label>
                             <label>Alınan Miktar <input type="number" id="stockQty" step="0.01" required></label>
-                            <label>Kritik Eşik Uyarı Seviyesi <input type="number" id="stockThreshold" step="0.01" value="0"></label>
+                            <label>Kritik Eşik <input type="number" id="stockThreshold" step="0.01" value="0"></label>
                         </div>
                         <label>Toplam Alım Tutarı (TL) <input type="number" id="stockTotalCost" step="0.01" required></label>
                         <label>Ödemeyi Kim Yaptı?
@@ -199,8 +217,9 @@
                         <label>Müşteri Adı Soyadı <input type="text" id="saleCustomer" required></label>
                         <label>Halı Modeli / Ölçüsü <input type="text" id="saleModel" placeholder="Örn: Dalga Logolu 90x120" required></label>
                         <div class="form-grid">
+                            <label>Satış Tarihi <input type="date" id="saleDate" required></label>
                             <label>Satış Fiyatı (TL) <input type="number" id="salePrice" step="0.01" required></label>
-                            <label>Tahsil Edilen Tutar (TL) <input type="number" id="salePaid" step="0.01" required></label>
+                            <label>Tahsil Edilen (TL) <input type="number" id="salePaid" step="0.01" required></label>
                         </div>
                         <button type="submit" class="primary-button">Satışı Kaydet</button>
                     </form>
@@ -209,7 +228,7 @@
                         <h3>Satış ve Sipariş Kayıtları</h3>
                         <table class="data-table">
                             <thead>
-                                <tr><th>Müşteri</th><th>Model</th><th>Satış Tutarı</th><th>Tahsil Edilen</th><th>Kalan Alacak</th><th>İşlem</th></tr>
+                                <tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Satış Tutarı</th><th>Tahsil Edilen</th><th>Kalan Alacak</th><th>İşlem</th></tr>
                             </thead>
                             <tbody id="salesTableBody"></tbody>
                         </table>
@@ -223,26 +242,28 @@
                 </div>
                 <div class="grid-1-2">
                     <form class="panel-box" id="partnerForm">
-                        <h3>Kârdan Para Çekme (Mahsuplaşma)</h3>
-                        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 15px;">
-                            * Atölyeye yapılan harcamalar doğrudan "Stok ve Gider" bölümünden girilmelidir. Burası yalnızca ortakların kârdan şahsi hesaplarına para çekmesi içindir.
-                        </p>
-                        <label>Para Çeken Ortak
-                            <select id="partPerson" required>
-                                <option value="Semih">Semih</option>
-                                <option value="Ekrem">Ekrem</option>
+                        <h3>Nakit Hareketi İşle (Kâr Çekimi veya Borç Ödeme)</h3>
+                        <label>İşlem Tipi
+                            <select id="partType" required>
+                                <option value="cekim_semih">Semih - Atölye Kârından Para Çekti</option>
+                                <option value="cekim_ekrem">Ekrem - Atölye Kârından Para Çekti</option>
+                                <option value="odeme_ekrem_semihe">Ekrem, Semih'e Borcunu Ödedi (Cebinden)</option>
+                                <option value="odeme_semih_ekreme">Semih, Ekrem'e Borcunu Ödedi (Cebinden)</option>
                             </select>
                         </label>
-                        <label>Tutar (TL) <input type="number" id="partAmount" step="0.01" required></label>
-                        <label>Açıklama Notu <input type="text" id="partNote" placeholder="Örn: Aylık kâr payı çekimi" required></label>
-                        <button type="submit" class="primary-button">Çekimi Cari Hesaba İşle</button>
+                        <div class="form-grid">
+                            <label>İşlem Tarihi <input type="date" id="partDate" required></label>
+                            <label>Tutar (TL) <input type="number" id="partAmount" step="0.01" required></label>
+                        </div>
+                        <label>Açıklama Notu <input type="text" id="partNote" placeholder="Örn: Kargo masrafı için 50 TL gönderdim" required></label>
+                        <button type="submit" class="primary-button">Hareketi Cari Hesaba İşle</button>
                     </form>
 
                     <div class="panel-box">
                         <h3>Nakit Çekim Logları</h3>
                         <table class="data-table">
                             <thead>
-                                <tr><th>Ortak</th><th>Tutar</th><th>Açıklama</th><th>İşlem</th></tr>
+                                <tr><th>Tarih</th><th>Ortak İşlemi</th><th>Tutar</th><th>Açıklama</th><th>İşlem</th></tr>
                             </thead>
                             <tbody id="partnerTableBody"></tbody>
                         </table>
@@ -251,6 +272,47 @@
             </section>
         </main>
     </div>
+
+    <div id="tahsilatModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
+        <div class="panel-box" style="width:380px; background:#1f2330; border:1px solid #2d3446; border-radius:10px; padding:25px; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);">
+            <h3 style="border-left:4px solid #2ecc71; padding-left:10px; margin-bottom:15px; color:#fff;">💰 Tahsilat Detayı</h3>
+            <p id="modalCustomerInfo" style="font-size:13px; color:#8a99ad; margin-bottom:20px; line-height:1.4;"></p>
+            <form id="modalTahsilatForm">
+                <div class="form-grid">
+                    <label>Tahsilat Tarihi
+                        <input type="date" id="modalDate" style="width:100%;" required>
+                    </label>
+                    <label>Alınan Tutar (TL)
+                        <input type="number" id="modalAmount" step="0.01" style="width:100%;" required>
+                    </label>
+                </div>
+                <label style="margin-top:15px;">Ödemeyi Kim Teslim Aldı? (Hangi Hesaba Yattı?)
+                    <select id="modalCollector" style="width:100%;" required>
+                        <option value="Semih">Semih (Kendi Hesabına / Cebine Aldı)</option>
+                        <option value="Ekrem">Ekrem (Kendi Hesabına / Cebine Aldı)</option>
+                    </select>
+                </label>
+                <div style="display:flex; gap:10px; margin-top:25px;">
+                    <button type="submit" class="primary-button" style="background:#2ecc71; color:#000;">Tahsilatı İşle</button>
+                    <button type="button" class="primary-button" style="background:#e74c3c; color:#fff;" onclick="closeTahsilatModal()">İptal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="detailModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; align-items:center; justify-content:center;">
+        <div class="panel-box" style="width:700px; max-height:80vh; overflow-y:auto; background:#1f2330; border:1px solid #2d3446; border-radius:10px; padding:25px; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 id="detailModalTitle" style="border-left:4px solid #3498db; padding-left:10px; color:#fff;">Detaylar</h3>
+                <button onclick="closeDetailModal()" style="background:none; border:none; color:#e74c3c; font-size:24px; cursor:pointer; font-weight:bold;">&times;</button>
+            </div>
+            <table class="data-table">
+                <thead id="detailModalThead"></thead>
+                <tbody id="detailModalTbody"></tbody>
+            </table>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="script.js"></script>
