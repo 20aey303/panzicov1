@@ -203,8 +203,8 @@
                                     <option value="Diğer">📦 Diğer Üretim Malzemesi</option>
                                 </select>
                             </label>
-                            <label>Marka / Kategori <input type="text" id="catalogBrand" placeholder="Örn: Nako, Kumaşçı" required></label>
-                            <label>Seri / Model Adı <input type="text" id="catalogModel" placeholder="Örn: Vega, Tufting Kumaşı" required></label>
+                            <label><span id="catalogBrandLabel">Marka / Kategori</span> <input type="text" id="catalogBrand" placeholder="Örn: Nako, Kumaşçı" required></label>
+                            <label><span id="catalogModelLabel">Seri / Model Adı</span> <input type="text" id="catalogModel" placeholder="Örn: Vega, Tufting Kumaşı" required></label>
                             
                             <div id="yarnFields" style="display:contents;">
                                 <label>1 Top Gramajı (g) <input type="number" id="catalogGrams" placeholder="100"></label>
@@ -219,7 +219,8 @@
                     
                     <div class="panel-box" style="overflow-y:auto; max-height: 400px;">
                         <h3>📋 Tanımlı Ürünler (Katalog Listesi)</h3>
-                        <table class="data-table">
+                        <div class="table-responsive">
+                            <table class="data-table">
                             <thead><tr><th>Tipi</th><th>Marka & Model</th><th>Detay</th><th>İşlem</th></tr></thead>
                             <tbody id="catalogTableBody"></tbody>
                         </table>
@@ -232,7 +233,9 @@
                         <form class="panel-box" id="stockBuyForm" style="margin-bottom: 20px;">
                             <h3>📥 2. Adım: Stok Satın Al (Depoya Gir)</h3>
                             <label>Katalogdan Ürün Seç
-                                <select id="stockItemSelect" onchange="toggleStockBuyFields()" required><option value="">Önce ürün tanımlayın</option></select>
+                                <input type="text" id="stockItemSearch" list="catalogBuyList" placeholder="Aramak için yazın..." autocomplete="off" onchange="handleStockBuySelect()" required>
+                                <datalist id="catalogBuyList"></datalist>
+                                <input type="hidden" id="stockItemSelect" required>
                             </label>
                             
                             <div id="stockBuyYarnFields" class="form-grid" style="display:none; margin-top:10px; padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border-left:2px solid var(--accent-blue);">
@@ -269,11 +272,34 @@
                             <h3>📤 Üretimde Stok Kullan (Stoktan Düş)</h3>
                             <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Kullanımlarda para çıkışı olmaz, sadece mevcut envanterden miktar eksilir.</p>
                             <label>Mevcut Stoklardan Seç
-                                <select id="stockUseSelect" required><option value="">Envanterde ürün yok</option></select>
+                                <input type="text" id="stockUseSearch" list="catalogUseList" placeholder="Aramak için yazın..." autocomplete="off" onchange="handleStockUseSelect()" required>
+                                <datalist id="catalogUseList"></datalist>
+                                <input type="hidden" id="stockUseSelect" required>
                             </label>
+                            
+                            <div id="stockUseTypeOptions" style="display:none; margin-bottom:14px; gap:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px;">
+                                <label style="flex-direction:row; gap:5px; align-items:center; margin:0;"><input type="radio" name="fabricUseType" value="full" checked onchange="toggleFabricUseFields()"> Kumaşın Tamamını Kullan</label>
+                                <label style="flex-direction:row; gap:5px; align-items:center; margin:0;"><input type="radio" name="fabricUseType" value="partial" onchange="toggleFabricUseFields()"> Kumaştan Parça Kes</label>
+                            </div>
+
+                            <div id="fabricPartialFields" class="form-grid" style="display:none; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border-left:2px solid var(--accent-purple); margin-bottom:14px;">
+                                <label>Kullanılan Ölçü (En x Boy)
+                                    <div style="display:flex; gap:5px;">
+                                        <input type="number" id="fabUseW" placeholder="En" min="1" style="flex:1;">
+                                        <input type="number" id="fabUseH" placeholder="Boy" min="1" style="flex:1;">
+                                    </div>
+                                </label>
+                                <label>Kalan Yeni Parçanın Ölçüsü (En x Boy)
+                                    <div style="display:flex; gap:5px;">
+                                        <input type="number" id="fabRemW" placeholder="En" min="0" style="flex:1;">
+                                        <input type="number" id="fabRemH" placeholder="Boy" min="0" style="flex:1;">
+                                    </div>
+                                </label>
+                            </div>
+
                             <div class="form-grid">
                                 <label>Kullanım Tarihi <input type="date" id="stockUseDate" required></label>
-                                <label>Kullanılan Miktar <input type="number" id="stockUseQty" step="0.01" min="0.01" required></label>
+                                <label id="stockUseQtyLabel">Kullanılan Miktar <input type="number" id="stockUseQty" step="0.01" min="0.01" required></label>
                             </div>
                             <input type="hidden" id="editingStockUseId">
                             <div style="display:flex; gap:10px;">
@@ -299,7 +325,8 @@
                 <div class="panel-box" style="margin-top:25px; overflow-x:auto;">
                     <h3>🕒 Son Stok Hareketleri (Geçmiş)</h3>
                     <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Envanteri düzeltmek için yanlış girdiğiniz alım/kullanım hareketini buradan düzenleyebilir veya silebilirsiniz.</p>
-                    <table class="data-table">
+                    <div class="table-responsive">
+                        <table class="data-table">
                         <thead><tr><th>Tarih</th><th>İşlem Tipi</th><th>Ürün / Detay</th><th>Miktar</th><th>Maliyet</th><th>Aksiyon</th></tr></thead>
                         <tbody id="stockHistoryTableBody"></tbody>
                     </table>
@@ -362,7 +389,12 @@
                                 <option value="Ekrem">Ekrem (Cebinden)</option>
                             </select>
                         </label>
-                        <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--danger-red), #ef4444);">Gideri Kaydet</button>
+                        <input type="hidden" id="editingExpenseId">
+                        <input type="hidden" id="editingExpenseType">
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--danger-red), #ef4444);">Gideri Kaydet</button>
+                            <button type="button" id="cancelExpenseBtn" class="primary-button" style="display:none; background:var(--bg-panel-hover); color:var(--text-main);" onclick="cancelEditExpense()">İptal</button>
+                        </div>
                     </form>
 
                     <div>
@@ -608,6 +640,15 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-    <script src="script.js"></script>
+    <!-- Custom Script -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/catalog.js"></script>
+    <script src="js/stocks.js"></script>
+    <script src="js/expenses.js"></script>
+    <script src="js/sales.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/main.js"></script>
 </body>
 </html>

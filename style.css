@@ -635,6 +635,7 @@ select {
     padding: 12px 10px;
     border-bottom: 2px solid var(--border-color);
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .data-table td {
@@ -642,6 +643,7 @@ select {
     font-size: 13.5px;
     border-bottom: 1px solid var(--border-color);
     transition: background var(--transition-fast);
+    white-space: nowrap;
 }
 
 .data-table tr {
@@ -1148,3 +1150,18 @@ select {
         font-size: 20px;
     }
 }   
+/* Tabloların çok uzamasını önlemek için Scroll eklentisi */
+.table-responsive {
+    width: 100%;
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border-color);
+}
+.table-responsive thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-panel);
+    box-shadow: 0 1px 0 var(--border-color);
+}
