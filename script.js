@@ -24,13 +24,14 @@ let state = {
 let editingSaleId = null;
 let currentActiveSaleId = null;
 let salesFilterMode = 'all';
+let expenseFilterMode = 'all';
 let monthlyChartInstance = null;
 let categoryChartInstance = null;
 
 // ═══════════════════════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════════════════════
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function() {
     initTabs();
     initMobileMenu();
     initEventListeners();
@@ -41,62 +42,60 @@ document.addEventListener("DOMContentLoaded", () => {
 // ═══════════════════════════════════════════════════════════════
 //  TOAST BİLDİRİM SİSTEMİ
 // ═══════════════════════════════════════════════════════════════
-function showToast(type, title, message, duration = 4000) {
-    const container = document.getElementById("toastContainer");
+function showToast(type, title, message, duration) {
+    duration = duration || 4000;
+    var container = document.getElementById("toastContainer");
+    if (!container) return;
 
-    const icons = {
-        success: '✅',
-        error: '❌',
-        warning: '⚠️',
-        info: 'ℹ️'
-    };
+    var icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
 
-    const toast = document.createElement("div");
-    toast.className = `toast ${type}`;
-    toast.innerHTML = `
-        <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
-        <div class="toast-content">
-            <div class="toast-title">${title}</div>
-            <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
-        <div class="toast-progress"></div>
-    `;
+    var toast = document.createElement("div");
+    toast.className = "toast " + type;
+    toast.innerHTML =
+        '<span class="toast-icon">' + (icons[type] || 'ℹ️') + '</span>' +
+        '<div class="toast-content">' +
+            '<div class="toast-title">' + title + '</div>' +
+            '<div class="toast-message">' + message + '</div>' +
+        '</div>' +
+        '<button class="toast-close" onclick="this.parentElement.remove()">&times;</button>' +
+        '<div class="toast-progress"></div>';
 
     container.appendChild(toast);
 
-    setTimeout(() => {
-        toast.classList.add("removing");
-        setTimeout(() => toast.remove(), 300);
+    setTimeout(function() {
+        if (toast.parentElement) {
+            toast.classList.add("removing");
+            setTimeout(function() { if (toast.parentElement) toast.remove(); }, 300);
+        }
     }, duration);
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  YARDIMCI FONKSİYONLAR (TARİH)
+//  YARDIMCI FONKSİYONLAR
 // ═══════════════════════════════════════════════════════════════
 function getTodayForInput() {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
+    var today = new Date();
+    var yyyy = today.getFullYear();
+    var mm = String(today.getMonth() + 1).padStart(2, '0');
+    var dd = String(today.getDate()).padStart(2, '0');
+    return yyyy + '-' + mm + '-' + dd;
 }
 
 function formatDateForDisplay(dateStr) {
     if (!dateStr) return "-";
-    const d = new Date(dateStr);
+    var d = new Date(dateStr);
     if (isNaN(d)) return dateStr;
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const dd = String(d.getDate()).padStart(2, '0');
-    return `${dd}.${mm}.${yyyy}`;
+    var yyyy = d.getFullYear();
+    var mm = String(d.getMonth() + 1).padStart(2, '0');
+    var dd = String(d.getDate()).padStart(2, '0');
+    return dd + '.' + mm + '.' + yyyy;
 }
 
 function setDefaultDates() {
-    const today = getTodayForInput();
-    const dateFields = ["stockDate", "quickExpenseDate", "saleDate", "partDate"];
-    dateFields.forEach(id => {
-        const el = document.getElementById(id);
+    var today = getTodayForInput();
+    var ids = ["stockDate", "quickExpenseDate", "saleDate", "partDate", "expenseDate"];
+    ids.forEach(function(id) {
+        var el = document.getElementById(id);
         if (el) el.value = today;
     });
 }
@@ -109,30 +108,19 @@ function formatCurrency(val) {
 //  MOBİL MENÜ
 // ═══════════════════════════════════════════════════════════════
 function initMobileMenu() {
-    const hamburger = document.getElementById("hamburgerBtn");
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebarOverlay");
+    var hamburger = document.getElementById("hamburgerBtn");
+    var sidebar = document.getElementById("sidebar");
+    var overlay = document.getElementById("sidebarOverlay");
+    if (!hamburger || !sidebar || !overlay) return;
 
-    if (!hamburger) return;
-
-    hamburger.addEventListener("click", () => {
+    hamburger.addEventListener("click", function() {
         sidebar.classList.toggle("open");
         overlay.classList.toggle("active");
     });
 
-    overlay.addEventListener("click", () => {
+    overlay.addEventListener("click", function() {
         sidebar.classList.remove("open");
         overlay.classList.remove("active");
-    });
-
-    // Menü butonuna tıklayınca mobilde sidebar'ı kapat
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            if (window.innerWidth <= 768) {
-                sidebar.classList.remove("open");
-                overlay.classList.remove("active");
-            }
-        });
     });
 }
 
@@ -140,55 +128,64 @@ function initMobileMenu() {
 //  FIREBASE REAL-TIME LISTENERS
 // ═══════════════════════════════════════════════════════════════
 function listenToCloudData() {
-    db.collection("catalog").onSnapshot((snapshot) => {
+    db.collection("catalog").onSnapshot(function(snapshot) {
         state.catalog = [];
-        snapshot.forEach((doc) => state.catalog.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(function(doc) { state.catalog.push({ id: doc.id, ...doc.data() }); });
         renderCatalogDropdowns();
-    });
+    }, function(err) { console.error("Catalog error:", err); });
 
-    db.collection("stocks").onSnapshot((snapshot) => {
+    db.collection("stocks").onSnapshot(function(snapshot) {
         state.stocks = [];
-        snapshot.forEach((doc) => state.stocks.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(function(doc) { state.stocks.push({ id: doc.id, ...doc.data() }); });
         renderAll();
-    });
+    }, function(err) { console.error("Stocks error:", err); });
 
-    db.collection("sales").onSnapshot((snapshot) => {
+    db.collection("sales").onSnapshot(function(snapshot) {
         state.sales = [];
-        snapshot.forEach((doc) => state.sales.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(function(doc) { state.sales.push({ id: doc.id, ...doc.data() }); });
         renderAll();
-    });
+    }, function(err) { console.error("Sales error:", err); });
 
-    db.collection("partners").onSnapshot((snapshot) => {
+    db.collection("partners").onSnapshot(function(snapshot) {
         state.partners = [];
-        snapshot.forEach((doc) => state.partners.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(function(doc) { state.partners.push({ id: doc.id, ...doc.data() }); });
         renderAll();
-    });
+    }, function(err) { console.error("Partners error:", err); });
 
-    db.collection("tahsilatlar").onSnapshot((snapshot) => {
+    db.collection("tahsilatlar").onSnapshot(function(snapshot) {
         state.tahsilatlar = [];
-        snapshot.forEach((doc) => state.tahsilatlar.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach(function(doc) { state.tahsilatlar.push({ id: doc.id, ...doc.data() }); });
         renderAll();
-    });
+    }, function(err) { console.error("Tahsilatlar error:", err); });
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  TAB NAVİGASYONU
 // ═══════════════════════════════════════════════════════════════
 function initTabs() {
-    const navButtons = document.querySelectorAll(".nav-btn");
-    const tabPanels = document.querySelectorAll(".tab-panel");
+    var navButtons = document.querySelectorAll(".nav-btn");
+    var tabPanels = document.querySelectorAll(".tab-panel");
 
-    navButtons.forEach(btn => {
-        btn.addEventListener("click", () => {
-            const targetTab = btn.getAttribute("data-tab");
-            navButtons.forEach(b => b.classList.remove("active"));
-            tabPanels.forEach(p => p.classList.remove("active"));
+    navButtons.forEach(function(btn) {
+        btn.addEventListener("click", function() {
+            var targetTab = btn.getAttribute("data-tab");
+            navButtons.forEach(function(b) { b.classList.remove("active"); });
+            tabPanels.forEach(function(p) { p.classList.remove("active"); });
             btn.classList.add("active");
-            document.getElementById(targetTab).classList.add("active");
+            var panel = document.getElementById(targetTab);
+            if (panel) panel.classList.add("active");
 
-            // Raporlar sekmesine geçince grafikleri render et
+            // Mobilde sidebar kapat
+            if (window.innerWidth <= 768) {
+                var sidebar = document.getElementById("sidebar");
+                var overlay = document.getElementById("sidebarOverlay");
+                if (sidebar) sidebar.classList.remove("open");
+                if (overlay) overlay.classList.remove("active");
+            }
+
+            // Raporlar sekmesine geçince render et
             if (targetTab === 'reports') {
-                setTimeout(() => renderReports(), 100);
+                setTimeout(function() { renderReports(); }, 150);
             }
         });
     });
@@ -198,68 +195,75 @@ function initTabs() {
 //  EVENT LISTENERS
 // ═══════════════════════════════════════════════════════════════
 function initEventListeners() {
-    document.getElementById("calcForm").addEventListener("submit", (e) => { e.preventDefault(); calculateTuftingCost(); });
-    document.getElementById("catalogForm").addEventListener("submit", (e) => { e.preventDefault(); addCatalogItem(); });
-    document.getElementById("stockForm").addEventListener("submit", (e) => { e.preventDefault(); addStockAndExpense(); });
-    document.getElementById("quickExpenseForm").addEventListener("submit", (e) => { e.preventDefault(); addQuickExpense(); });
-    document.getElementById("saleForm").addEventListener("submit", (e) => { e.preventDefault(); saveSaleRecord(); });
-    document.getElementById("partnerForm").addEventListener("submit", (e) => { e.preventDefault(); addPartnerTransaction(); });
-    document.getElementById("modalTahsilatForm").addEventListener("submit", (e) => { e.preventDefault(); submitTahsilatModal(); });
+    var calcForm = document.getElementById("calcForm");
+    if (calcForm) calcForm.addEventListener("submit", function(e) { e.preventDefault(); calculateTuftingCost(); });
 
-    // Tüm Verileri Sıfırla butonu
-    document.getElementById("resetDataBtn").addEventListener("click", resetAllData);
+    var catalogForm = document.getElementById("catalogForm");
+    if (catalogForm) catalogForm.addEventListener("submit", function(e) { e.preventDefault(); addCatalogItem(); });
+
+    var stockForm = document.getElementById("stockForm");
+    if (stockForm) stockForm.addEventListener("submit", function(e) { e.preventDefault(); addStockAndExpense(); });
+
+    var quickExpForm = document.getElementById("quickExpenseForm");
+    if (quickExpForm) quickExpForm.addEventListener("submit", function(e) { e.preventDefault(); addQuickExpense(); });
+
+    var saleForm = document.getElementById("saleForm");
+    if (saleForm) saleForm.addEventListener("submit", function(e) { e.preventDefault(); saveSaleRecord(); });
+
+    var partnerForm = document.getElementById("partnerForm");
+    if (partnerForm) partnerForm.addEventListener("submit", function(e) { e.preventDefault(); addPartnerTransaction(); });
+
+    var modalForm = document.getElementById("modalTahsilatForm");
+    if (modalForm) modalForm.addEventListener("submit", function(e) { e.preventDefault(); submitTahsilatModal(); });
+
+    var expenseForm = document.getElementById("expenseForm");
+    if (expenseForm) expenseForm.addEventListener("submit", function(e) { e.preventDefault(); addExpense(); });
+
+    var resetBtn = document.getElementById("resetDataBtn");
+    if (resetBtn) resetBtn.addEventListener("click", resetAllData);
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  1. KATALOG
 // ═══════════════════════════════════════════════════════════════
 function addCatalogItem() {
-    const category = document.getElementById("catalogCategory").value.trim();
-    const name = document.getElementById("catalogName").value.trim();
-
+    var category = document.getElementById("catalogCategory").value.trim();
+    var name = document.getElementById("catalogName").value.trim();
     if (!category || !name) {
         showToast('warning', 'Eksik Bilgi', 'Kategori ve kalem adı boş bırakılamaz.');
         return;
     }
-
     db.collection("catalog").add({
         category: category,
         name: name,
-        unit: document.getElementById("catalogUnit").value.trim() || ""
-    }).then(() => {
-        showToast('success', 'Katalog Güncellendi', `"${name}" kataloğa eklendi.`);
+        unit: (document.getElementById("catalogUnit").value || "").trim()
+    }).then(function() {
+        showToast('success', 'Katalog Güncellendi', '"' + name + '" kataloğa eklendi.');
+        document.getElementById("catalogForm").reset();
     });
-    document.getElementById("catalogForm").reset();
 }
 
 function renderCatalogDropdowns() {
-    const stockSelect = document.getElementById("stockItemSelect");
-    const quickSelect = document.getElementById("quickExpenseItem");
-
-    let html = `<option value="">Seçim Yapın...</option>`;
-    state.catalog.forEach(c => {
-        html += `<option value="${c.id}">${c.name} (${c.category})</option>`;
+    var targets = ["stockItemSelect", "quickExpenseItem", "expenseItem"];
+    var html = '<option value="">Seçim Yapın...</option>';
+    state.catalog.forEach(function(c) {
+        html += '<option value="' + c.id + '">' + c.name + ' (' + c.category + ')</option>';
     });
-
-    stockSelect.innerHTML = html;
-    quickSelect.innerHTML = html;
+    targets.forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    });
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  2. STOK / GİDER YÖNETİMİ
+//  2. STOK / GİDER
 // ═══════════════════════════════════════════════════════════════
 function addStockAndExpense() {
-    const catalogItem = state.catalog.find(c => c.id === document.getElementById("stockItemSelect").value);
-    if (!catalogItem) {
-        showToast('warning', 'Seçim Hatası', 'Lütfen katalogdan bir kalem seçin!');
-        return;
-    }
-
-    const cost = parseFloat(document.getElementById("stockTotalCost").value);
-    if (isNaN(cost) || cost <= 0) {
-        showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.');
-        return;
-    }
+    var selectVal = document.getElementById("stockItemSelect").value;
+    var catalogItem = state.catalog.find(function(c) { return c.id === selectVal; });
+    if (!catalogItem) { showToast('warning', 'Seçim Hatası', 'Lütfen katalogdan bir kalem seçin!'); return; }
+    var cost = parseFloat(document.getElementById("stockTotalCost").value);
+    if (isNaN(cost) || cost <= 0) { showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.'); return; }
 
     db.collection("stocks").add({
         catalogId: catalogItem.id,
@@ -271,143 +275,199 @@ function addStockAndExpense() {
         cost: cost,
         payer: document.getElementById("stockPayer").value,
         date: document.getElementById("stockDate").value
-    }).then(() => {
-        showToast('success', 'Stok Eklendi', `"${catalogItem.name}" stoğa ve gidere işlendi.`);
+    }).then(function() {
+        showToast('success', 'Stok Eklendi', '"' + catalogItem.name + '" stoğa ve gidere işlendi.');
+        document.getElementById("stockForm").reset();
+        setDefaultDates();
     });
-
-    document.getElementById("stockForm").reset();
-    setDefaultDates();
 }
 
 function addQuickExpense() {
-    const catalogItem = state.catalog.find(c => c.id === document.getElementById("quickExpenseItem").value);
-    if (!catalogItem) {
-        showToast('warning', 'Seçim Hatası', 'Lütfen katalogdan bir kalem seçin!');
-        return;
-    }
-
-    const amount = parseFloat(document.getElementById("quickExpenseAmount").value);
-    if (isNaN(amount) || amount <= 0) {
-        showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.');
-        return;
-    }
+    var selectVal = document.getElementById("quickExpenseItem").value;
+    var catalogItem = state.catalog.find(function(c) { return c.id === selectVal; });
+    if (!catalogItem) { showToast('warning', 'Seçim Hatası', 'Lütfen katalogdan bir kalem seçin!'); return; }
+    var amount = parseFloat(document.getElementById("quickExpenseAmount").value);
+    if (isNaN(amount) || amount <= 0) { showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.'); return; }
 
     db.collection("stocks").add({
         catalogId: catalogItem.id,
         category: catalogItem.category,
         name: catalogItem.name,
-        qty: 0,
-        unit: catalogItem.unit,
-        threshold: 0,
+        qty: 0, unit: catalogItem.unit, threshold: 0,
         cost: amount,
         payer: document.getElementById("quickExpensePayer").value,
         date: document.getElementById("quickExpenseDate").value
-    }).then(() => {
-        showToast('success', 'Gider İşlendi', `${formatCurrency(amount)} gider olarak kaydedildi.`);
+    }).then(function() {
+        showToast('success', 'Gider İşlendi', formatCurrency(amount) + ' gider olarak kaydedildi.');
+        document.getElementById("quickExpenseForm").reset();
+        setDefaultDates();
     });
+}
 
-    document.getElementById("quickExpenseForm").reset();
-    setDefaultDates();
+// Giderler sekmesinden gider ekleme
+function addExpense() {
+    var selectVal = document.getElementById("expenseItem").value;
+    var catalogItem = state.catalog.find(function(c) { return c.id === selectVal; });
+    if (!catalogItem) { showToast('warning', 'Seçim Hatası', 'Lütfen katalogdan bir kalem seçin!'); return; }
+    var amount = parseFloat(document.getElementById("expenseAmount").value);
+    if (isNaN(amount) || amount <= 0) { showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.'); return; }
+
+    db.collection("stocks").add({
+        catalogId: catalogItem.id,
+        category: catalogItem.category,
+        name: catalogItem.name,
+        qty: parseFloat(document.getElementById("expenseQty").value) || 0,
+        unit: catalogItem.unit,
+        threshold: 0,
+        cost: amount,
+        payer: document.getElementById("expensePayer").value,
+        date: document.getElementById("expenseDate").value,
+        note: (document.getElementById("expenseNote").value || "").trim()
+    }).then(function() {
+        showToast('success', 'Gider Kaydedildi', '"' + catalogItem.name + '" - ' + formatCurrency(amount));
+        document.getElementById("expenseForm").reset();
+        setDefaultDates();
+    });
 }
 
 function renderStockTable() {
-    const tbody = document.getElementById("stockTableBody");
+    var tbody = document.getElementById("stockTableBody");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
-    let stockSummary = {};
-    state.stocks.forEach(s => {
+    var stockSummary = {};
+    state.stocks.forEach(function(s) {
         if (!stockSummary[s.name]) {
-            stockSummary[s.name] = { ...s, totalQty: s.qty || 0 };
+            stockSummary[s.name] = { category: s.category, name: s.name, unit: s.unit, totalQty: s.qty || 0, threshold: s.threshold || 0 };
         } else {
             stockSummary[s.name].totalQty += (s.qty || 0);
-            // threshold'u her zaman en yüksek değeri al
-            if (s.threshold > stockSummary[s.name].threshold) {
+            if ((s.threshold || 0) > stockSummary[s.name].threshold) {
                 stockSummary[s.name].threshold = s.threshold;
             }
         }
     });
 
-    const summaryItems = Object.values(stockSummary).filter(s => s.totalQty > 0 || s.threshold > 0);
+    var items = Object.values(stockSummary).filter(function(s) { return s.totalQty > 0 || s.threshold > 0; });
 
-    if (summaryItems.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><div class="emoji">📦</div><p>Henüz stok kaydı yok.</p></td></tr>`;
+    if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">📦 Henüz stok kaydı yok.</td></tr>';
         return;
     }
 
-    summaryItems.forEach(s => {
-        const isCritical = s.totalQty <= s.threshold && s.threshold > 0;
-        const unitText = s.unit ? ` ${s.unit}` : "";
-
-        tbody.innerHTML += `
-            <tr>
-                <td>${s.category}</td>
-                <td style="font-weight:600;">${s.name}</td>
-                <td style="font-weight:700; color:${isCritical ? 'var(--danger-red)' : 'var(--text-main)'}">${s.totalQty}${unitText}</td>
-                <td>${s.threshold}${unitText}</td>
-                <td><span class="badge ${isCritical ? 'danger' : 'success'}">${isCritical ? 'Kritik' : 'Normal'}</span></td>
-            </tr>`;
+    items.forEach(function(s) {
+        var isCritical = s.threshold > 0 && s.totalQty <= s.threshold;
+        var unitText = s.unit ? ' ' + s.unit : '';
+        tbody.innerHTML +=
+            '<tr>' +
+                '<td>' + s.category + '</td>' +
+                '<td style="font-weight:600;">' + s.name + '</td>' +
+                '<td style="font-weight:700; color:' + (isCritical ? 'var(--danger-red)' : 'var(--text-main)') + '">' + s.totalQty + unitText + '</td>' +
+                '<td>' + s.threshold + unitText + '</td>' +
+                '<td><span class="badge ' + (isCritical ? 'danger' : 'success') + '">' + (isCritical ? 'Kritik' : 'Normal') + '</span></td>' +
+            '</tr>';
     });
 }
 
-// Bireysel gider kayıtları tablosu
-function renderExpenseLogTable() {
-    const tbody = document.getElementById("expenseLogTableBody");
+// ═══════════════════════════════════════════════════════════════
+//  GİDERLER SEKMESİ
+// ═══════════════════════════════════════════════════════════════
+function setExpenseFilter(mode, btn) {
+    expenseFilterMode = mode;
+    if (btn) {
+        var parent = btn.parentElement;
+        if (parent) {
+            parent.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+        }
+        btn.classList.add('active');
+    }
+    renderExpenseTable();
+}
+
+function renderExpenseTable() {
+    var tbody = document.getElementById("expenseTableBody");
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    const expenses = state.stocks.filter(s => s.cost && s.cost > 0);
+    var expenses = state.stocks.filter(function(s) { return s.cost && s.cost > 0; });
+
+    // Filtre uygula
+    var now = new Date();
+    var startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    if (expenseFilterMode === 'month') {
+        expenses = expenses.filter(function(s) { return new Date(s.date) >= startOfMonth; });
+    } else if (expenseFilterMode === 'semih') {
+        expenses = expenses.filter(function(s) { return s.payer === 'Semih'; });
+    } else if (expenseFilterMode === 'ekrem') {
+        expenses = expenses.filter(function(s) { return s.payer === 'Ekrem'; });
+    } else if (expenseFilterMode === 'custom') {
+        var startVal = document.getElementById("expFilterStart") ? document.getElementById("expFilterStart").value : '';
+        var endVal = document.getElementById("expFilterEnd") ? document.getElementById("expFilterEnd").value : '';
+        if (startVal) expenses = expenses.filter(function(s) { return s.date >= startVal; });
+        if (endVal) expenses = expenses.filter(function(s) { return s.date <= endVal; });
+    }
+
+    // Tarih sıralaması (en yeni üstte)
+    expenses.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
 
     if (expenses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><div class="emoji">📝</div><p>Henüz gider kaydı yok.</p></td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">📝 Gösterilecek gider kaydı yok.</td></tr>';
         return;
     }
 
-    expenses.forEach(s => {
-        const unitText = s.unit ? ` ${s.unit}` : "";
-        tbody.innerHTML += `
-            <tr>
-                <td style="color:var(--text-muted); font-size:12px;">${formatDateForDisplay(s.date)}</td>
-                <td style="font-weight:600;">${s.name}</td>
-                <td>${s.category}</td>
-                <td>${s.qty > 0 ? s.qty + unitText : '-'}</td>
-                <td style="font-weight:700; color:var(--danger-red);">${formatCurrency(s.cost)}</td>
-                <td><span class="badge ${s.payer === 'Semih' ? 'info' : 'warning'}">${s.payer}</span></td>
-                <td><button class="delete-btn" onclick="deleteDocument('stocks', '${s.id}')">Sil</button></td>
-            </tr>`;
+    expenses.forEach(function(s) {
+        var unitText = s.unit ? ' ' + s.unit : '';
+        tbody.innerHTML +=
+            '<tr>' +
+                '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td>' +
+                '<td style="font-weight:600;">' + s.name + '</td>' +
+                '<td>' + s.category + '</td>' +
+                '<td>' + (s.qty > 0 ? s.qty + unitText : '-') + '</td>' +
+                '<td style="font-weight:700; color:var(--danger-red);">' + formatCurrency(s.cost) + '</td>' +
+                '<td><span class="badge ' + (s.payer === 'Semih' ? 'info' : 'warning') + '">' + s.payer + '</span></td>' +
+                '<td><button class="delete-btn" onclick="deleteDocument(\'stocks\', \'' + s.id + '\')">Sil</button></td>' +
+            '</tr>';
     });
+
+    // Gider özet kartlarını güncelle
+    updateExpenseSummaryCards();
+}
+
+function updateExpenseSummaryCards() {
+    var totalExp = 0, semihExp = 0, ekremExp = 0;
+    state.stocks.forEach(function(s) {
+        if (s.cost && s.cost > 0) {
+            totalExp += s.cost;
+            if (s.payer === 'Semih') semihExp += s.cost;
+            if (s.payer === 'Ekrem') ekremExp += s.cost;
+        }
+    });
+    var el1 = document.getElementById("expTotalExpense");
+    var el2 = document.getElementById("expSemihTotal");
+    var el3 = document.getElementById("expEkremTotal");
+    if (el1) el1.innerText = formatCurrency(totalExp);
+    if (el2) el2.innerText = formatCurrency(semihExp);
+    if (el3) el3.innerText = formatCurrency(ekremExp);
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  3. SATIŞ SİSTEMİ & GELİŞMİŞ TAHSİLAT
+//  3. SATIŞ SİSTEMİ & TAHSİLAT
 // ═══════════════════════════════════════════════════════════════
 function saveSaleRecord() {
-    const customer = document.getElementById("saleCustomer").value.trim();
-    const model = document.getElementById("saleModel").value.trim();
-    const price = parseFloat(document.getElementById("salePrice").value);
-    const paid = parseFloat(document.getElementById("salePaid").value);
-    const collector = document.getElementById("saleCollector").value;
+    var customer = document.getElementById("saleCustomer").value.trim();
+    var model = document.getElementById("saleModel").value.trim();
+    var price = parseFloat(document.getElementById("salePrice").value);
+    var paid = parseFloat(document.getElementById("salePaid").value);
 
-    if (!customer || !model) {
-        showToast('warning', 'Eksik Bilgi', 'Müşteri adı ve halı modeli zorunludur.');
-        return;
-    }
+    if (!customer || !model) { showToast('warning', 'Eksik Bilgi', 'Müşteri adı ve halı modeli zorunludur.'); return; }
+    if (isNaN(price) || price <= 0) { showToast('warning', 'Geçersiz Fiyat', 'Satış fiyatı sıfırdan büyük olmalıdır.'); return; }
+    if (isNaN(paid) || paid < 0) { showToast('warning', 'Geçersiz Tutar', 'Tahsil edilen tutar negatif olamaz.'); return; }
+    if (paid > price) { showToast('warning', 'Tutar Hatası', 'Tahsil edilen tutar satış fiyatını aşamaz.'); return; }
 
-    if (isNaN(price) || price <= 0) {
-        showToast('warning', 'Geçersiz Fiyat', 'Satış fiyatı sıfırdan büyük olmalıdır.');
-        return;
-    }
+    var collectorEl = document.getElementById("saleCollector");
+    var collector = collectorEl ? collectorEl.value : '';
 
-    if (isNaN(paid) || paid < 0) {
-        showToast('warning', 'Geçersiz Tutar', 'Tahsil edilen tutar negatif olamaz.');
-        return;
-    }
-
-    if (paid > price) {
-        showToast('warning', 'Tutar Hatası', 'Tahsil edilen tutar satış fiyatını aşamaz.');
-        return;
-    }
-
-    const saleData = {
+    var saleData = {
         customer: customer,
         model: model,
         price: price,
@@ -417,28 +477,16 @@ function saveSaleRecord() {
     };
 
     if (editingSaleId) {
-        db.collection("sales").doc(editingSaleId).update(saleData).then(() => {
-            showToast('success', 'Satış Güncellendi', `${customer} siparişi güncellendi.`);
+        db.collection("sales").doc(editingSaleId).update(saleData).then(function() {
+            showToast('success', 'Satış Güncellendi', customer + ' siparişi güncellendi.');
         });
         editingSaleId = null;
-        document.querySelector("#saleForm button[type='submit']").innerText = "Satışı Kaydet";
-        document.querySelector("#saleForm button[type='submit']").style.background = "";
+        var btn = document.querySelector("#saleForm button[type='submit']");
+        if (btn) { btn.innerText = "Satışı Kaydet"; btn.style.background = ""; }
     } else {
-        db.collection("sales").add(saleData).then(() => {
-            showToast('success', 'Satış Kaydedildi', `${customer} - ${model} satışı kaydedildi.`);
+        db.collection("sales").add(saleData).then(function() {
+            showToast('success', 'Satış Kaydedildi', customer + ' - ' + model + ' satışı kaydedildi.');
         });
-
-        // İlk satış anında tahsilat varsa kaydet
-        if (paid > 0 && collector !== 'Kasa') {
-            db.collection("tahsilatlar").add({
-                saleId: 'initial',
-                customer: customer,
-                model: model,
-                amount: paid,
-                collector: collector,
-                date: document.getElementById("saleDate").value
-            });
-        }
     }
 
     document.getElementById("saleForm").reset();
@@ -446,61 +494,71 @@ function saveSaleRecord() {
 }
 
 function editSale(id) {
-    const sale = state.sales.find(s => s.id === id);
+    var sale = state.sales.find(function(s) { return s.id === id; });
     if (!sale) return;
 
-    const parsedDate = sale.date ? sale.date.substring(0, 10) : getTodayForInput();
+    var parsedDate = sale.date ? sale.date.substring(0, 10) : getTodayForInput();
 
-    document.getElementById("saleCustomer").value = sale.customer;
-    document.getElementById("saleModel").value = sale.model;
-    document.getElementById("salePrice").value = sale.price;
-    document.getElementById("salePaid").value = sale.paid;
+    document.getElementById("saleCustomer").value = sale.customer || '';
+    document.getElementById("saleModel").value = sale.model || '';
+    document.getElementById("salePrice").value = sale.price || 0;
+    document.getElementById("salePaid").value = sale.paid || 0;
     document.getElementById("saleDate").value = parsedDate;
-    if (sale.collector) {
-        document.getElementById("saleCollector").value = sale.collector;
-    }
+
+    var collectorEl = document.getElementById("saleCollector");
+    if (collectorEl && sale.collector) collectorEl.value = sale.collector;
 
     editingSaleId = id;
-    const submitBtn = document.querySelector("#saleForm button[type='submit']");
-    submitBtn.innerText = "Satışı Güncelle";
-    submitBtn.style.background = "linear-gradient(135deg, #fbbf24, #f59e0b)";
-
+    var btn = document.querySelector("#saleForm button[type='submit']");
+    if (btn) {
+        btn.innerText = "Satışı Güncelle";
+        btn.style.background = "linear-gradient(135deg, #fbbf24, #f59e0b)";
+    }
     document.getElementById("saleForm").scrollIntoView({ behavior: 'smooth' });
 }
 
 function receivePayment(id) {
-    const sale = state.sales.find(s => s.id === id);
+    var sale = state.sales.find(function(s) { return s.id === id; });
     if (!sale) return;
 
     currentActiveSaleId = id;
-    const remaining = sale.price - sale.paid;
+    var remaining = sale.price - sale.paid;
 
-    document.getElementById("modalCustomerInfo").innerHTML = `
-        <strong>Müşteri:</strong> ${sale.customer}<br>
-        <strong>Model/Ölçü:</strong> ${sale.model}<br>
-        <strong>Kalan Toplam Borç:</strong> <span style="color:var(--accent-yellow); font-weight:bold;">${formatCurrency(remaining)}</span>
-    `;
+    var info = document.getElementById("modalCustomerInfo");
+    if (info) {
+        info.innerHTML =
+            '<strong>Müşteri:</strong> ' + sale.customer + '<br>' +
+            '<strong>Model:</strong> ' + sale.model + '<br>' +
+            '<strong>Kalan Borç:</strong> <span style="color:var(--accent-yellow); font-weight:bold;">' + formatCurrency(remaining) + '</span>';
+    }
 
-    document.getElementById("modalAmount").value = remaining;
-    document.getElementById("modalAmount").max = remaining;
-    document.getElementById("modalDate").value = getTodayForInput();
-    document.getElementById("tahsilatModal").classList.add("active");
+    var amountEl = document.getElementById("modalAmount");
+    if (amountEl) { amountEl.value = remaining; amountEl.max = remaining; }
+
+    var dateEl = document.getElementById("modalDate");
+    if (dateEl) dateEl.value = getTodayForInput();
+
+    // Modal'ı aç
+    var modal = document.getElementById("tahsilatModal");
+    if (modal) modal.style.display = "flex";
 }
 
 function closeTahsilatModal() {
-    document.getElementById("tahsilatModal").classList.remove("active");
-    document.getElementById("modalTahsilatForm").reset();
+    var modal = document.getElementById("tahsilatModal");
+    if (modal) modal.style.display = "none";
+    var form = document.getElementById("modalTahsilatForm");
+    if (form) form.reset();
     currentActiveSaleId = null;
 }
 
 function submitTahsilatModal() {
-    const sale = state.sales.find(s => s.id === currentActiveSaleId);
+    var sale = state.sales.find(function(s) { return s.id === currentActiveSaleId; });
     if (!sale) return;
 
-    const amount = parseFloat(document.getElementById("modalAmount").value);
-    const collector = document.getElementById("modalCollector").value;
-    const tDate = document.getElementById("modalDate").value;
-    const remaining = sale.price - sale.paid;
+    var amount = parseFloat(document.getElementById("modalAmount").value);
+    var collector = document.getElementById("modalCollector").value;
+    var tDate = document.getElementById("modalDate").value;
+    var remaining = sale.price - sale.paid;
 
     if (isNaN(amount) || amount <= 0 || amount > remaining) {
         showToast('warning', 'Geçersiz Tutar', 'Lütfen kalan borç tutarını aşmayacak geçerli bir miktar girin!');
@@ -515,131 +573,114 @@ function submitTahsilatModal() {
         collector: collector,
         date: tDate
     })
-    .then(() => {
-        const updatedPaid = sale.paid + amount;
+    .then(function() {
+        var updatedPaid = sale.paid + amount;
         return db.collection("sales").doc(currentActiveSaleId).update({ paid: updatedPaid });
     })
-    .then(() => {
-        showToast('success', 'Tahsilat Başarılı', `${formatCurrency(amount)} ${collector} cari hesabına işlendi.`);
+    .then(function() {
+        showToast('success', 'Tahsilat Başarılı', formatCurrency(amount) + ' ' + collector + ' hesabına işlendi.');
         closeTahsilatModal();
     })
-    .catch(err => {
-        showToast('error', 'Hata', 'İşlem sırasında bir hata oluştu: ' + err.message);
+    .catch(function(err) {
+        showToast('error', 'Hata', 'İşlem hatası: ' + err.message);
     });
 }
 
-// Satış tablosu filtreleme
+// Satış filtreleme
 function setSalesFilter(mode, btn) {
     salesFilterMode = mode;
-
-    // Aktif buton stili
     if (btn) {
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        var btns = document.querySelectorAll('#sales .filter-btn');
+        btns.forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
     }
-
     renderSalesTable();
-}
-
-function filterSalesTable() {
-    renderSalesTable();
-}
-
-function getFilteredSales() {
-    let filtered = [...state.sales];
-    const searchTerm = (document.getElementById("salesSearchInput")?.value || "").toLowerCase().trim();
-
-    // Arama filtresi
-    if (searchTerm) {
-        filtered = filtered.filter(s =>
-            (s.customer || "").toLowerCase().includes(searchTerm) ||
-            (s.model || "").toLowerCase().includes(searchTerm)
-        );
-    }
-
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    if (salesFilterMode === 'week') {
-        filtered = filtered.filter(s => new Date(s.date) >= startOfWeek);
-    } else if (salesFilterMode === 'month') {
-        filtered = filtered.filter(s => new Date(s.date) >= startOfMonth);
-    } else if (salesFilterMode === 'debtor') {
-        filtered = filtered.filter(s => (s.price - s.paid) > 0);
-    } else if (salesFilterMode === 'custom') {
-        const startVal = document.getElementById("salesFilterStart")?.value;
-        const endVal = document.getElementById("salesFilterEnd")?.value;
-        if (startVal) filtered = filtered.filter(s => s.date >= startVal);
-        if (endVal) filtered = filtered.filter(s => s.date <= endVal);
-    }
-
-    return filtered;
 }
 
 function renderSalesTable() {
-    const tbody = document.getElementById("salesTableBody");
+    var tbody = document.getElementById("salesTableBody");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
-    const filtered = getFilteredSales();
+    var filtered = state.sales.slice();
+    var searchInput = document.getElementById("salesSearchInput");
+    var searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    // Arama
+    if (searchTerm) {
+        filtered = filtered.filter(function(s) {
+            return (s.customer || '').toLowerCase().indexOf(searchTerm) >= 0 ||
+                   (s.model || '').toLowerCase().indexOf(searchTerm) >= 0;
+        });
+    }
+
+    // Tarih filtreleri
+    var now = new Date();
+    if (salesFilterMode === 'week') {
+        var startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        filtered = filtered.filter(function(s) { return new Date(s.date) >= startOfWeek; });
+    } else if (salesFilterMode === 'month') {
+        var startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        filtered = filtered.filter(function(s) { return new Date(s.date) >= startOfMonth; });
+    } else if (salesFilterMode === 'debtor') {
+        filtered = filtered.filter(function(s) { return (s.price - s.paid) > 0; });
+    }
+
+    // Tarih sıralama
+    filtered.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-state"><div class="emoji">🧾</div><p>Gösterilecek satış kaydı yok.</p></td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">🧾 Gösterilecek satış kaydı yok.</td></tr>';
         return;
     }
 
-    filtered.forEach(s => {
-        const remaining = s.price - s.paid;
-        tbody.innerHTML += `
-            <tr>
-                <td style="color:var(--text-muted); font-size:12px;">${formatDateForDisplay(s.date)}</td>
-                <td style="font-weight:600;">${s.customer}</td>
-                <td>${s.model}</td>
-                <td>${formatCurrency(s.price)}</td>
-                <td style="color:var(--accent-green)">${formatCurrency(s.paid)}</td>
-                <td style="font-weight:bold; color:${remaining > 0 ? 'var(--accent-yellow)' : 'var(--text-muted)'}">${formatCurrency(remaining)}</td>
-                <td>
-                    <div class="table-actions">
-                        ${remaining > 0 ? `<button class="action-btn collect" onclick="receivePayment('${s.id}')">💰 Tahsilat</button>` : ''}
-                        <button class="action-btn edit" onclick="editSale('${s.id}')">✏️</button>
-                        <button class="delete-btn" onclick="deleteDocument('sales', '${s.id}')">🗑️</button>
-                    </div>
-                </td>
-            </tr>`;
+    filtered.forEach(function(s) {
+        var remaining = s.price - s.paid;
+        var tahsilatBtn = remaining > 0 ? '<button class="action-btn collect" onclick="receivePayment(\'' + s.id + '\')">💰</button>' : '';
+        tbody.innerHTML +=
+            '<tr>' +
+                '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td>' +
+                '<td style="font-weight:600;">' + s.customer + '</td>' +
+                '<td>' + s.model + '</td>' +
+                '<td>' + formatCurrency(s.price) + '</td>' +
+                '<td style="color:var(--accent-green)">' + formatCurrency(s.paid) + '</td>' +
+                '<td style="font-weight:bold; color:' + (remaining > 0 ? 'var(--accent-yellow)' : 'var(--text-muted)') + '">' + formatCurrency(remaining) + '</td>' +
+                '<td><div class="table-actions">' +
+                    tahsilatBtn +
+                    '<button class="action-btn edit" onclick="editSale(\'' + s.id + '\')">✏️</button>' +
+                    '<button class="delete-btn" onclick="deleteDocument(\'sales\', \'' + s.id + '\')">🗑️</button>' +
+                '</div></td>' +
+            '</tr>';
     });
 }
 
 function renderDashboardDebtors() {
-    const tbody = document.getElementById("dashDebtorsTableBody");
+    var tbody = document.getElementById("dashDebtorsTableBody");
     if (!tbody) return;
-
     tbody.innerHTML = "";
-    let hasDebtor = false;
+    var hasDebtor = false;
 
-    state.sales.forEach(s => {
-        const remaining = s.price - s.paid;
+    state.sales.forEach(function(s) {
+        var remaining = s.price - s.paid;
         if (remaining > 0) {
             hasDebtor = true;
-            tbody.innerHTML += `
-                <tr>
-                    <td style="color:var(--text-muted); font-size:12px;">${formatDateForDisplay(s.date)}</td>
-                    <td style="font-weight:700;">${s.customer}</td>
-                    <td>${s.model}</td>
-                    <td>${formatCurrency(s.price)}</td>
-                    <td style="color:var(--accent-green)">${formatCurrency(s.paid)}</td>
-                    <td style="color:var(--accent-yellow); font-weight:bold;">${formatCurrency(remaining)}</td>
-                    <td>
-                        <button class="action-btn collect" onclick="receivePayment('${s.id}')" style="font-size:11px;">💰 Tahsilat Yap</button>
-                    </td>
-                </tr>`;
+            tbody.innerHTML +=
+                '<tr>' +
+                    '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td>' +
+                    '<td style="font-weight:700;">' + s.customer + '</td>' +
+                    '<td>' + s.model + '</td>' +
+                    '<td>' + formatCurrency(s.price) + '</td>' +
+                    '<td style="color:var(--accent-green)">' + formatCurrency(s.paid) + '</td>' +
+                    '<td style="color:var(--accent-yellow); font-weight:bold;">' + formatCurrency(remaining) + '</td>' +
+                    '<td><button class="action-btn collect" onclick="receivePayment(\'' + s.id + '\')" style="font-size:11px;">💰 Tahsilat</button></td>' +
+                '</tr>';
         }
     });
 
     if (!hasDebtor) {
-        tbody.innerHTML = `<tr><td colspan="7" style="color:var(--accent-green); text-align:center; padding:20px;">✅ Harika! Bekleyen herhangi bir müşteri alacağı yok.</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--accent-green); text-align:center; padding:20px;">✅ Bekleyen alacak yok.</td></tr>';
     }
 }
 
@@ -647,129 +688,107 @@ function renderDashboardDebtors() {
 //  4. ORTAKLIK CARİ
 // ═══════════════════════════════════════════════════════════════
 function addPartnerTransaction() {
-    const amount = parseFloat(document.getElementById("partAmount").value);
-    const note = document.getElementById("partNote").value.trim();
-
-    if (isNaN(amount) || amount <= 0) {
-        showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.');
-        return;
-    }
-
-    if (!note) {
-        showToast('warning', 'Eksik Bilgi', 'Açıklama notu zorunludur.');
-        return;
-    }
-
-    const type = document.getElementById("partType").value;
+    var amount = parseFloat(document.getElementById("partAmount").value);
+    var note = document.getElementById("partNote").value.trim();
+    if (isNaN(amount) || amount <= 0) { showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.'); return; }
+    if (!note) { showToast('warning', 'Eksik Bilgi', 'Açıklama notu zorunludur.'); return; }
 
     db.collection("partners").add({
-        type: type,
+        type: document.getElementById("partType").value,
         amount: amount,
         note: note,
         date: document.getElementById("partDate").value
-    }).then(() => {
-        const labels = {
-            'cekim_semih': 'Semih kâr çekimi',
-            'cekim_ekrem': 'Ekrem kâr çekimi',
-            'odeme_ekrem_semihe': 'Ekrem → Semih borç ödeme',
-            'odeme_semih_ekreme': 'Semih → Ekrem borç ödeme'
-        };
-        showToast('success', 'Cari Hesap Güncellendi', `${labels[type] || 'İşlem'}: ${formatCurrency(amount)}`);
+    }).then(function() {
+        showToast('success', 'Cari Güncellendi', formatCurrency(amount) + ' işlendi.');
+        document.getElementById("partnerForm").reset();
+        setDefaultDates();
     });
-
-    document.getElementById("partnerForm").reset();
-    setDefaultDates();
 }
 
 function renderPartnerTable() {
-    const tbody = document.getElementById("partnerTableBody");
+    var tbody = document.getElementById("partnerTableBody");
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     if (state.partners.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><div class="emoji">🤝</div><p>Henüz ortaklık hareketi yok.</p></td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">🤝 Henüz ortaklık hareketi yok.</td></tr>';
         return;
     }
 
-    state.partners.forEach(p => {
-        let islemMetni = "";
-        let badgeClass = "danger";
-
+    state.partners.forEach(function(p) {
+        var islemMetni = "";
+        var badgeClass = "danger";
         if (p.type === "cekim_semih") islemMetni = "Semih (Kâr Çekimi)";
         else if (p.type === "cekim_ekrem") islemMetni = "Ekrem (Kâr Çekimi)";
-        else if (p.type === "odeme_ekrem_semihe") { islemMetni = "Ekrem ➔ Semih'e (Borç Ödedi)"; badgeClass = "info"; }
-        else if (p.type === "odeme_semih_ekreme") { islemMetni = "Semih ➔ Ekrem'e (Borç Ödedi)"; badgeClass = "info"; }
+        else if (p.type === "odeme_ekrem_semihe") { islemMetni = "Ekrem ➔ Semih (Borç Ödedi)"; badgeClass = "info"; }
+        else if (p.type === "odeme_semih_ekreme") { islemMetni = "Semih ➔ Ekrem (Borç Ödedi)"; badgeClass = "info"; }
 
-        tbody.innerHTML += `
-            <tr>
-                <td style="color:var(--text-muted); font-size:12px;">${formatDateForDisplay(p.date)}</td>
-                <td><span class="badge ${badgeClass}">${islemMetni}</span></td>
-                <td style="font-weight:bold; color:var(--danger-red)">${formatCurrency(p.amount)}</td>
-                <td style="color:var(--text-muted); font-size:13px">${p.note}</td>
-                <td><button class="delete-btn" onclick="deleteDocument('partners', '${p.id}')">Sil</button></td>
-            </tr>`;
+        tbody.innerHTML +=
+            '<tr>' +
+                '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(p.date) + '</td>' +
+                '<td><span class="badge ' + badgeClass + '">' + islemMetni + '</span></td>' +
+                '<td style="font-weight:bold; color:var(--danger-red)">' + formatCurrency(p.amount) + '</td>' +
+                '<td style="color:var(--text-muted); font-size:13px">' + p.note + '</td>' +
+                '<td><button class="delete-btn" onclick="deleteDocument(\'partners\', \'' + p.id + '\')">Sil</button></td>' +
+            '</tr>';
     });
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  KAYIT SİLME
+//  KAYIT SİLME & SIFIRLAMA
 // ═══════════════════════════════════════════════════════════════
 function deleteDocument(collectionName, docId) {
     if (confirm("Bu kaydı kalıcı olarak silmek istediğinize emin misiniz?")) {
-        db.collection(collectionName).doc(docId).delete().then(() => {
-            showToast('info', 'Kayıt Silindi', 'Seçilen kayıt başarıyla silindi.');
-        }).catch(err => {
+        db.collection(collectionName).doc(docId).delete().then(function() {
+            showToast('info', 'Kayıt Silindi', 'Seçilen kayıt silindi.');
+        }).catch(function(err) {
             showToast('error', 'Silme Hatası', err.message);
         });
     }
 }
 
-// ═══════════════════════════════════════════════════════════════
-//  TÜM VERİLERİ SIFIRLA
-// ═══════════════════════════════════════════════════════════════
 function resetAllData() {
-    const step1 = confirm("⚠️ DİKKAT: Tüm verileri (stok, satış, ortaklık, katalog, tahsilatlar) kalıcı olarak sileceksiniz!\n\nBu işlem geri alınamaz. Devam etmek istiyor musunuz?");
+    var step1 = confirm("⚠️ DİKKAT: Tüm verileri kalıcı olarak sileceksiniz!\n\nBu işlem geri alınamaz. Devam?");
     if (!step1) return;
 
-    const step2 = confirm("🔴 İKİNCİ ONAY: Gerçekten TÜM verileri silmek istediğinize emin misiniz?\n\nBu işlemi onaylarsanız tüm veriler kaybolacaktır!");
+    var step2 = confirm("🔴 İKİNCİ ONAY: Gerçekten TÜM verileri silmek istediğinize emin misiniz?");
     if (!step2) return;
 
-    const step3 = prompt("🛑 SON ADIM: Silme işlemini onaylamak için 'SİL' yazın:");
+    var step3 = prompt("🛑 SON ADIM: Silmek için 'SİL' yazın:");
     if (step3 !== 'SİL') {
         showToast('info', 'İptal Edildi', 'Veri silme işlemi iptal edildi.');
         return;
     }
 
-    showToast('warning', 'Veriler Siliniyor', 'Tüm koleksiyonlar temizleniyor...');
+    showToast('warning', 'Siliniyor', 'Tüm veriler temizleniyor...');
 
-    const collections = ['catalog', 'stocks', 'sales', 'partners', 'tahsilatlar'];
-    const deletePromises = collections.map(col => {
-        return db.collection(col).get().then(snapshot => {
-            const batch = db.batch();
-            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    var collections = ['catalog', 'stocks', 'sales', 'partners', 'tahsilatlar'];
+    var promises = collections.map(function(col) {
+        return db.collection(col).get().then(function(snapshot) {
+            var batch = db.batch();
+            snapshot.docs.forEach(function(doc) { batch.delete(doc.ref); });
             return batch.commit();
         });
     });
 
-    Promise.all(deletePromises).then(() => {
-        showToast('success', 'Tamamlandı', 'Tüm veriler başarıyla silindi.');
-    }).catch(err => {
-        showToast('error', 'Hata', 'Silme sırasında bir hata oluştu: ' + err.message);
+    Promise.all(promises).then(function() {
+        showToast('success', 'Tamamlandı', 'Tüm veriler silindi.');
+    }).catch(function(err) {
+        showToast('error', 'Hata', err.message);
     });
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  5. GELİŞMİŞ FİNANSAL MOTOR (BEYİN)
+//  5. FİNANSAL MOTOR
 // ═══════════════════════════════════════════════════════════════
 function calculateFinancials() {
-    let totalSales = 0, totalExpenses = 0, totalReceivables = 0;
+    var totalSales = 0, totalExpenses = 0, totalReceivables = 0;
+    var semihHarcama = 0, ekremHarcama = 0;
+    var semihTahsilat = 0, ekremTahsilat = 0;
+    var semihCekim = 0, ekremCekim = 0;
+    var semihTransferBakiye = 0, ekremTransferBakiye = 0;
 
-    let semihHarcama = 0, ekremHarcama = 0;
-    let semihTahsilat = 0, ekremTahsilat = 0;
-    let semihCekim = 0, ekremCekim = 0;
-
-    let semihTransferBakiye = 0, ekremTransferBakiye = 0;
-
-    state.stocks.forEach(s => {
+    state.stocks.forEach(function(s) {
         if (s.cost) {
             totalExpenses += s.cost;
             if (s.payer === "Semih") semihHarcama += s.cost;
@@ -777,58 +796,45 @@ function calculateFinancials() {
         }
     });
 
-    state.sales.forEach(s => {
+    state.sales.forEach(function(s) {
         totalSales += s.price;
         totalReceivables += (s.price - s.paid);
     });
 
-    state.tahsilatlar.forEach(t => {
+    state.tahsilatlar.forEach(function(t) {
         if (t.collector === "Semih") semihTahsilat += t.amount;
         if (t.collector === "Ekrem") ekremTahsilat += t.amount;
     });
 
-    state.partners.forEach(p => {
-        if (p.type === "cekim_semih") {
-            semihTransferBakiye -= p.amount;
-            semihCekim += p.amount;
-        }
-        if (p.type === "cekim_ekrem") {
-            ekremTransferBakiye -= p.amount;
-            ekremCekim += p.amount;
-        }
-        if (p.type === "odeme_ekrem_semihe") {
-            ekremTransferBakiye += p.amount;
-            semihTransferBakiye -= p.amount;
-        }
-        if (p.type === "odeme_semih_ekreme") {
-            semihTransferBakiye += p.amount;
-            ekremTransferBakiye -= p.amount;
-        }
+    state.partners.forEach(function(p) {
+        if (p.type === "cekim_semih") { semihTransferBakiye -= p.amount; semihCekim += p.amount; }
+        if (p.type === "cekim_ekrem") { ekremTransferBakiye -= p.amount; ekremCekim += p.amount; }
+        if (p.type === "odeme_ekrem_semihe") { ekremTransferBakiye += p.amount; semihTransferBakiye -= p.amount; }
+        if (p.type === "odeme_semih_ekreme") { semihTransferBakiye += p.amount; ekremTransferBakiye -= p.amount; }
     });
 
-    const netProfit = totalSales - totalExpenses;
+    var netProfit = totalSales - totalExpenses;
+    var semihNetYatirim = semihHarcama - semihTahsilat + semihTransferBakiye;
+    var ekremNetYatirim = ekremHarcama - ekremTahsilat + ekremTransferBakiye;
 
-    let semihNetYatirim = semihHarcama - semihTahsilat + semihTransferBakiye;
-    let ekremNetYatirim = ekremHarcama - ekremTahsilat + ekremTransferBakiye;
-
-    let mutabakatMetni = "✅ Hesaplar Eşit";
-    let mutabakatRenk = "var(--accent-green)";
+    var mutabakatMetni = "✅ Hesaplar Eşit";
+    var mutabakatRenk = "var(--accent-green)";
 
     if (semihNetYatirim > ekremNetYatirim) {
-        let borc = (semihNetYatirim - ekremNetYatirim) / 2;
-        mutabakatMetni = `Ekrem, Semih'e <br><strong style="font-size:22px">${formatCurrency(borc)}</strong> ödemeli.`;
+        var borc = (semihNetYatirim - ekremNetYatirim) / 2;
+        mutabakatMetni = 'Ekrem, Semih\'e <br><strong style="font-size:22px">' + formatCurrency(borc) + '</strong> ödemeli.';
         mutabakatRenk = "var(--accent-yellow)";
     } else if (ekremNetYatirim > semihNetYatirim) {
-        let borc = (ekremNetYatirim - semihNetYatirim) / 2;
-        mutabakatMetni = `Semih, Ekrem'e <br><strong style="font-size:22px">${formatCurrency(borc)}</strong> ödemeli.`;
+        var borc2 = (ekremNetYatirim - semihNetYatirim) / 2;
+        mutabakatMetni = 'Semih, Ekrem\'e <br><strong style="font-size:22px">' + formatCurrency(borc2) + '</strong> ödemeli.';
         mutabakatRenk = "var(--accent-yellow)";
     }
 
     return {
-        netProfit, totalSales, totalReceivables, totalExpenses,
-        semihHarcama, ekremHarcama, semihTahsilat, ekremTahsilat,
-        semihCekim, ekremCekim,
-        mutabakatMetni, mutabakatRenk
+        netProfit: netProfit, totalSales: totalSales, totalReceivables: totalReceivables, totalExpenses: totalExpenses,
+        semihHarcama: semihHarcama, ekremHarcama: ekremHarcama, semihTahsilat: semihTahsilat, ekremTahsilat: ekremTahsilat,
+        semihCekim: semihCekim, ekremCekim: ekremCekim,
+        mutabakatMetni: mutabakatMetni, mutabakatRenk: mutabakatRenk
     };
 }
 
@@ -836,7 +842,7 @@ function calculateFinancials() {
 //  RENDER ALL
 // ═══════════════════════════════════════════════════════════════
 function sortDataByDate() {
-    const sorter = (a, b) => new Date(b.date || 0) - new Date(a.date || 0);
+    var sorter = function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); };
     state.stocks.sort(sorter);
     state.sales.sort(sorter);
     state.partners.sort(sorter);
@@ -845,27 +851,40 @@ function sortDataByDate() {
 
 function renderAll() {
     sortDataByDate();
-    const fin = calculateFinancials();
+    var fin = calculateFinancials();
 
-    // Dashboard KPI'lar
-    document.getElementById("dashNetProfit").innerText = formatCurrency(fin.netProfit);
-    document.getElementById("dashNetProfit").style.color = fin.netProfit < 0 ? "var(--danger-red)" : "var(--accent-green)";
-    document.getElementById("dashIncome").innerText = formatCurrency(fin.totalSales);
-    document.getElementById("dashReceivables").innerText = formatCurrency(fin.totalReceivables);
-    document.getElementById("dashExpenses").innerText = formatCurrency(fin.totalExpenses);
+    // Dashboard
+    var el;
+    el = document.getElementById("dashNetProfit");
+    if (el) { el.innerText = formatCurrency(fin.netProfit); el.style.color = fin.netProfit < 0 ? "var(--danger-red)" : "var(--accent-green)"; }
 
-    document.getElementById("dashSemih").innerText = `Atölye Harcaması: ${formatCurrency(fin.semihHarcama)}`;
-    document.getElementById("dashSemihTahsilat").innerText = `Cebine Giren Tahsilat: ${formatCurrency(fin.semihTahsilat)}`;
-    document.getElementById("dashEkrem").innerText = `Atölye Harcaması: ${formatCurrency(fin.ekremHarcama)}`;
-    document.getElementById("dashEkremTahsilat").innerText = `Cebine Giren Tahsilat: ${formatCurrency(fin.ekremTahsilat)}`;
+    el = document.getElementById("dashIncome");
+    if (el) el.innerText = formatCurrency(fin.totalSales);
 
-    const mutabakatEl = document.getElementById("dashMutabakat");
-    mutabakatEl.innerHTML = fin.mutabakatMetni;
-    mutabakatEl.style.color = fin.mutabakatRenk;
+    el = document.getElementById("dashReceivables");
+    if (el) el.innerText = formatCurrency(fin.totalReceivables);
+
+    el = document.getElementById("dashExpenses");
+    if (el) el.innerText = formatCurrency(fin.totalExpenses);
+
+    el = document.getElementById("dashSemih");
+    if (el) el.innerText = "Atölye Harcaması: " + formatCurrency(fin.semihHarcama);
+
+    el = document.getElementById("dashSemihTahsilat");
+    if (el) el.innerText = "Cebine Giren Tahsilat: " + formatCurrency(fin.semihTahsilat);
+
+    el = document.getElementById("dashEkrem");
+    if (el) el.innerText = "Atölye Harcaması: " + formatCurrency(fin.ekremHarcama);
+
+    el = document.getElementById("dashEkremTahsilat");
+    if (el) el.innerText = "Cebine Giren Tahsilat: " + formatCurrency(fin.ekremTahsilat);
+
+    el = document.getElementById("dashMutabakat");
+    if (el) { el.innerHTML = fin.mutabakatMetni; el.style.color = fin.mutabakatRenk; }
 
     // Tablolar
     renderStockTable();
-    renderExpenseLogTable();
+    renderExpenseTable();
     renderSalesTable();
     renderPartnerTable();
     renderDashboardAlerts();
@@ -875,551 +894,446 @@ function renderAll() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  6. MODAL DETAY GÖRÜNÜM (EKSTRELER)
+//  6. DETAY MODALLARI
 // ═══════════════════════════════════════════════════════════════
 function showDetails(type) {
-    document.getElementById("detailModal").classList.add("active");
-    const title = document.getElementById("detailModalTitle");
-    const thead = document.getElementById("detailModalThead");
-    const tbody = document.getElementById("detailModalTbody");
+    var modal = document.getElementById("detailModal");
+    if (modal) modal.style.display = "flex";
+
+    var title = document.getElementById("detailModalTitle");
+    var thead = document.getElementById("detailModalThead");
+    var tbody = document.getElementById("detailModalTbody");
+    if (!thead || !tbody) return;
 
     tbody.innerHTML = "";
 
     if (type === 'giderler') {
-        title.innerText = "Tüm Gider ve Harcamalar";
-        thead.innerHTML = `<tr><th>Tarih</th><th>Kalem/Ürün</th><th>Kategori</th><th>Tutar</th><th>Ödeyen</th></tr>`;
-        state.stocks.forEach(s => {
+        if (title) title.innerText = "Tüm Gider ve Harcamalar";
+        thead.innerHTML = '<tr><th>Tarih</th><th>Kalem</th><th>Kategori</th><th>Tutar</th><th>Ödeyen</th></tr>';
+        state.stocks.forEach(function(s) {
             if (s.cost) {
-                tbody.innerHTML += `<tr><td style="color:var(--text-muted); font-size:12px;">${formatDateForDisplay(s.date)}</td><td>${s.name}</td><td>${s.category}</td><td style="color:var(--danger-red); font-weight:bold;">${formatCurrency(s.cost)}</td><td><span class="badge ${s.payer === 'Semih' ? 'info' : 'warning'}">${s.payer}</span></td></tr>`;
+                tbody.innerHTML += '<tr><td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td><td>' + s.name + '</td><td>' + s.category + '</td><td style="color:var(--danger-red); font-weight:bold;">' + formatCurrency(s.cost) + '</td><td><span class="badge ' + (s.payer === 'Semih' ? 'info' : 'warning') + '">' + s.payer + '</span></td></tr>';
             }
         });
     } else if (type === 'gelirler') {
-        title.innerText = "Tüm Satışlar (Ciro)";
-        thead.innerHTML = `<tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Satış Tutarı</th><th>Tahsil Edilen</th></tr>`;
-        state.sales.forEach(s => {
-            tbody.innerHTML += `<tr><td style="color:var(--text-muted); font-size:12px;">${formatDateForDisplay(s.date)}</td><td>${s.customer}</td><td>${s.model}</td><td style="color:var(--accent-green); font-weight:bold;">${formatCurrency(s.price)}</td><td style="color:var(--accent-blue);">${formatCurrency(s.paid)}</td></tr>`;
+        if (title) title.innerText = "Tüm Satışlar (Ciro)";
+        thead.innerHTML = '<tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Satış Tutarı</th><th>Tahsil Edilen</th></tr>';
+        state.sales.forEach(function(s) {
+            tbody.innerHTML += '<tr><td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td><td>' + s.customer + '</td><td>' + s.model + '</td><td style="color:var(--accent-green); font-weight:bold;">' + formatCurrency(s.price) + '</td><td style="color:var(--accent-blue);">' + formatCurrency(s.paid) + '</td></tr>';
         });
     } else if (type === 'alacaklar') {
-        title.innerText = "Bekleyen Müşteri Alacakları";
-        thead.innerHTML = `<tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Kalan Borç</th></tr>`;
-        state.sales.forEach(s => {
-            const rem = s.price - s.paid;
+        if (title) title.innerText = "Bekleyen Müşteri Alacakları";
+        thead.innerHTML = '<tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Kalan Borç</th></tr>';
+        state.sales.forEach(function(s) {
+            var rem = s.price - s.paid;
             if (rem > 0) {
-                tbody.innerHTML += `<tr><td style="color:var(--text-muted); font-size:12px;">${formatDateForDisplay(s.date)}</td><td>${s.customer}</td><td>${s.model}</td><td style="color:var(--accent-yellow); font-weight:bold;">${formatCurrency(rem)}</td></tr>`;
+                tbody.innerHTML += '<tr><td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td><td>' + s.customer + '</td><td>' + s.model + '</td><td style="color:var(--accent-yellow); font-weight:bold;">' + formatCurrency(rem) + '</td></tr>';
             }
         });
     }
 }
 
 function showPartnerDetails(partnerName) {
-    document.getElementById("detailModal").classList.add("active");
-    document.getElementById("detailModalTitle").innerText = `${partnerName} Cari Ekstresi (Hesap Hareketleri)`;
+    var modal = document.getElementById("detailModal");
+    if (modal) modal.style.display = "flex";
 
-    const thead = document.getElementById("detailModalThead");
-    const tbody = document.getElementById("detailModalTbody");
+    var titleEl = document.getElementById("detailModalTitle");
+    if (titleEl) titleEl.innerText = partnerName + ' Cari Ekstresi';
 
-    thead.innerHTML = `<tr><th>Tarih</th><th>İşlem Tipi</th><th>Açıklama</th><th>Tutar</th></tr>`;
+    var thead = document.getElementById("detailModalThead");
+    var tbody = document.getElementById("detailModalTbody");
+    if (!thead || !tbody) return;
 
-    let partnerTransactions = [];
+    thead.innerHTML = '<tr><th>Tarih</th><th>İşlem Tipi</th><th>Açıklama</th><th>Tutar</th></tr>';
 
-    state.stocks.forEach(s => {
-        if (s.payer === partnerName && s.cost > 0) partnerTransactions.push({ date: s.date, type: "Atölyeye Harcadı", desc: s.name, amount: s.cost, badge: "success", sign: "+" });
+    var txns = [];
+
+    state.stocks.forEach(function(s) {
+        if (s.payer === partnerName && s.cost > 0) txns.push({ date: s.date, type: "Atölyeye Harcadı", desc: s.name, amount: s.cost, badge: "success", sign: "+" });
     });
 
-    state.tahsilatlar.forEach(t => {
-        if (t.collector === partnerName) partnerTransactions.push({ date: t.date, type: "Müşteriden Aldı", desc: `${t.customer} (${t.model})`, amount: t.amount, badge: "danger", sign: "-" });
+    state.tahsilatlar.forEach(function(t) {
+        if (t.collector === partnerName) txns.push({ date: t.date, type: "Müşteriden Aldı", desc: (t.customer || '') + ' (' + (t.model || '') + ')', amount: t.amount, badge: "danger", sign: "-" });
     });
 
-    state.partners.forEach(p => {
+    state.partners.forEach(function(p) {
         if (partnerName === "Semih") {
-            if (p.type === "cekim_semih") partnerTransactions.push({ date: p.date, type: "Kâr Çekimi", desc: p.note, amount: p.amount, badge: "danger", sign: "-" });
-            if (p.type === "odeme_ekrem_semihe") partnerTransactions.push({ date: p.date, type: "Ortaktan Aldı", desc: "Ekrem borcunu ödedi", amount: p.amount, badge: "danger", sign: "-" });
-            if (p.type === "odeme_semih_ekreme") partnerTransactions.push({ date: p.date, type: "Ortağa Ödedi", desc: "Ekrem'e borç ödendi", amount: p.amount, badge: "success", sign: "+" });
+            if (p.type === "cekim_semih") txns.push({ date: p.date, type: "Kâr Çekimi", desc: p.note, amount: p.amount, badge: "danger", sign: "-" });
+            if (p.type === "odeme_ekrem_semihe") txns.push({ date: p.date, type: "Ortaktan Aldı", desc: "Ekrem borcunu ödedi", amount: p.amount, badge: "danger", sign: "-" });
+            if (p.type === "odeme_semih_ekreme") txns.push({ date: p.date, type: "Ortağa Ödedi", desc: "Ekrem'e borç ödendi", amount: p.amount, badge: "success", sign: "+" });
         } else if (partnerName === "Ekrem") {
-            if (p.type === "cekim_ekrem") partnerTransactions.push({ date: p.date, type: "Kâr Çekimi", desc: p.note, amount: p.amount, badge: "danger", sign: "-" });
-            if (p.type === "odeme_semih_ekreme") partnerTransactions.push({ date: p.date, type: "Ortaktan Aldı", desc: "Semih borcunu ödedi", amount: p.amount, badge: "danger", sign: "-" });
-            if (p.type === "odeme_ekrem_semihe") partnerTransactions.push({ date: p.date, type: "Ortağa Ödedi", desc: "Semih'e borç ödendi", amount: p.amount, badge: "success", sign: "+" });
+            if (p.type === "cekim_ekrem") txns.push({ date: p.date, type: "Kâr Çekimi", desc: p.note, amount: p.amount, badge: "danger", sign: "-" });
+            if (p.type === "odeme_semih_ekreme") txns.push({ date: p.date, type: "Ortaktan Aldı", desc: "Semih borcunu ödedi", amount: p.amount, badge: "danger", sign: "-" });
+            if (p.type === "odeme_ekrem_semihe") txns.push({ date: p.date, type: "Ortağa Ödedi", desc: "Semih'e borç ödendi", amount: p.amount, badge: "success", sign: "+" });
         }
     });
 
-    partnerTransactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    txns.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
 
     tbody.innerHTML = "";
-    partnerTransactions.forEach(item => {
-        const amountColor = item.sign === "+" ? "var(--accent-green)" : "var(--danger-red)";
-        tbody.innerHTML += `<tr><td style="color:var(--text-muted); font-size:12px;">${formatDateForDisplay(item.date)}</td><td><span class="badge ${item.badge}">${item.type}</span></td><td>${item.desc}</td><td style="color:${amountColor}; font-weight:bold;">${item.sign}${formatCurrency(item.amount)}</td></tr>`;
+    txns.forEach(function(item) {
+        var color = item.sign === "+" ? "var(--accent-green)" : "var(--danger-red)";
+        tbody.innerHTML += '<tr><td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(item.date) + '</td><td><span class="badge ' + item.badge + '">' + item.type + '</span></td><td>' + item.desc + '</td><td style="color:' + color + '; font-weight:bold;">' + item.sign + formatCurrency(item.amount) + '</td></tr>';
     });
 }
 
 function closeDetailModal() {
-    document.getElementById("detailModal").classList.remove("active");
+    var modal = document.getElementById("detailModal");
+    if (modal) modal.style.display = "none";
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  7. STOK ALARMLARI
 // ═══════════════════════════════════════════════════════════════
 function renderDashboardAlerts() {
-    const tbody = document.getElementById("dashStockAlerts");
+    var tbody = document.getElementById("dashStockAlerts");
+    if (!tbody) return;
     tbody.innerHTML = "";
-    let hasAlert = false;
+    var hasAlert = false;
 
-    let stockSummary = {};
-    state.stocks.forEach(s => {
-        if (!stockSummary[s.name]) {
-            stockSummary[s.name] = { ...s, totalQty: s.qty || 0 };
+    var summary = {};
+    state.stocks.forEach(function(s) {
+        if (!summary[s.name]) {
+            summary[s.name] = { name: s.name, unit: s.unit, totalQty: s.qty || 0, threshold: s.threshold || 0 };
         } else {
-            stockSummary[s.name].totalQty += (s.qty || 0);
-            if (s.threshold > stockSummary[s.name].threshold) {
-                stockSummary[s.name].threshold = s.threshold;
-            }
+            summary[s.name].totalQty += (s.qty || 0);
+            if ((s.threshold || 0) > summary[s.name].threshold) summary[s.name].threshold = s.threshold;
         }
     });
 
-    Object.values(stockSummary).forEach(s => {
+    Object.values(summary).forEach(function(s) {
         if (s.threshold > 0 && s.totalQty <= s.threshold) {
             hasAlert = true;
-            const unitText = s.unit ? ` ${s.unit}` : "";
-            tbody.innerHTML += `
-                <tr>
-                    <td style="font-weight:600;">${s.name}</td>
-                    <td style="color:var(--danger-red); font-weight:bold;">${s.totalQty}${unitText}</td>
-                    <td>${s.threshold}${unitText}</td>
-                    <td><span class="badge danger">Kritik</span></td>
-                </tr>`;
+            var unitText = s.unit ? ' ' + s.unit : '';
+            tbody.innerHTML +=
+                '<tr>' +
+                    '<td style="font-weight:600;">' + s.name + '</td>' +
+                    '<td style="color:var(--danger-red); font-weight:bold;">' + s.totalQty + unitText + '</td>' +
+                    '<td>' + s.threshold + unitText + '</td>' +
+                    '<td><span class="badge danger">Kritik</span></td>' +
+                '</tr>';
         }
     });
 
     if (!hasAlert) {
-        tbody.innerHTML = `<tr><td colspan="4" style="color:var(--accent-green); text-align:center; padding:16px;">✅ Kritik malzeme yok.</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="4" style="color:var(--accent-green); text-align:center; padding:16px;">✅ Kritik malzeme yok.</td></tr>';
     }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  8. MALİYET HESAPLAYICI
+//  8. MALİYET HESAPLAYICI (GÜNCEL - TOP BAZLI)
 // ═══════════════════════════════════════════════════════════════
 function calculateTuftingCost() {
-    const yarnWeight = parseFloat(document.getElementById("calcYarnWeight").value);
-    const yarnPrice = parseFloat(document.getElementById("calcYarnPrice").value);
-    const width = parseFloat(document.getElementById("calcWidth").value);
-    const height = parseFloat(document.getElementById("calcHeight").value);
-    const clothPrice = parseFloat(document.getElementById("calcClothPrice").value);
-    const glueCost = parseFloat(document.getElementById("calcGlueCost").value);
-    const baseCost = parseFloat(document.getElementById("calcBaseCost").value);
-    const fixCost = parseFloat(document.getElementById("calcFixCost").value);
-    const laborCost = parseFloat(document.getElementById("calcLaborCost").value);
-    const margin = parseFloat(document.getElementById("calcProfitMargin").value);
+    var spoolGrams = parseFloat(document.getElementById("calcSpoolGrams").value) || 1;
+    var spoolPrice = parseFloat(document.getElementById("calcSpoolPrice").value) || 0;
+    var yarnUsage = parseFloat(document.getElementById("calcYarnUsage").value) || 0;
+    var width = parseFloat(document.getElementById("calcWidth").value) || 0;
+    var height = parseFloat(document.getElementById("calcHeight").value) || 0;
+    var clothPrice = parseFloat(document.getElementById("calcClothPrice").value) || 0;
+    var glueCost = parseFloat(document.getElementById("calcGlueCost").value) || 0;
+    var baseCost = parseFloat(document.getElementById("calcBaseCost").value) || 0;
+    var fixCost = parseFloat(document.getElementById("calcFixCost").value) || 0;
+    var laborCost = parseFloat(document.getElementById("calcLaborCost").value) || 0;
+    var margin = parseFloat(document.getElementById("calcProfitMargin").value) || 0;
 
-    const netMaterial = ((yarnWeight / 1000) * yarnPrice) + (((width * height) / 10000) * clothPrice) + glueCost + baseCost;
-    const totalCost = netMaterial + fixCost + laborCost;
-    const salePrice = totalCost * (1 + margin / 100);
+    // Kaç top iplik gerekli?
+    var spoolsNeeded = Math.ceil(yarnUsage / spoolGrams);
+    var yarnCost = spoolsNeeded * spoolPrice;
 
-    document.getElementById("resMaterial").innerText = formatCurrency(netMaterial);
-    document.getElementById("resTotalCost").innerText = formatCurrency(totalCost);
-    document.getElementById("resSalePrice").innerText = formatCurrency(salePrice);
+    // Kumaş maliyeti (m² bazlı)
+    var fabricArea = (width * height) / 10000; // cm² -> m²
+    var clothCost = fabricArea * clothPrice;
 
-    showToast('info', 'Hesaplandı', `Önerilen satış fiyatı: ${formatCurrency(salePrice)}`);
+    // Diğer malzeme
+    var otherMaterial = glueCost + baseCost;
+
+    // Toplamlar
+    var totalMaterial = yarnCost + clothCost + otherMaterial;
+    var fixedTotal = fixCost + laborCost;
+    var totalCost = totalMaterial + fixedTotal;
+    var salePrice = totalCost * (1 + margin / 100);
+    var profit = salePrice - totalCost;
+
+    // Sonuçları göster
+    var setVal = function(id, val) { var e = document.getElementById(id); if (e) e.innerText = val; };
+
+    setVal("resYarn", formatCurrency(yarnCost));
+    setVal("resSpools", spoolsNeeded + " top × " + formatCurrency(spoolPrice));
+    setVal("resCloth", formatCurrency(clothCost) + " (" + fabricArea.toFixed(2) + " m²)");
+    setVal("resOther", formatCurrency(otherMaterial));
+    setVal("resMaterial", formatCurrency(totalMaterial));
+    setVal("resFixed", formatCurrency(fixedTotal));
+    setVal("resTotalCost", formatCurrency(totalCost));
+    setVal("resSalePrice", formatCurrency(salePrice));
+    setVal("resProfit", formatCurrency(profit));
+
+    showToast('info', 'Hesaplandı', 'Önerilen satış: ' + formatCurrency(salePrice) + ' | Kâr: ' + formatCurrency(profit));
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  9. GRAFİKLER (Chart.js)
+//  9. GRAFİKLER
 // ═══════════════════════════════════════════════════════════════
 function renderDashboardChart() {
-    const ctx = document.getElementById("monthlyChart");
-    if (!ctx) return;
+    var canvas = document.getElementById("monthlyChart");
+    if (!canvas) return;
 
-    // Aylık verileri topla
-    const monthlyData = {};
+    // Canvas görünür mü kontrol et
+    if (canvas.offsetParent === null) return;
 
-    state.sales.forEach(s => {
+    var monthlyData = {};
+    state.sales.forEach(function(s) {
         if (!s.date) return;
-        const monthKey = s.date.substring(0, 7); // YYYY-MM
-        if (!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expense: 0 };
-        monthlyData[monthKey].income += s.price;
+        var key = s.date.substring(0, 7);
+        if (!monthlyData[key]) monthlyData[key] = { income: 0, expense: 0 };
+        monthlyData[key].income += (s.price || 0);
     });
 
-    state.stocks.forEach(s => {
+    state.stocks.forEach(function(s) {
         if (!s.date || !s.cost) return;
-        const monthKey = s.date.substring(0, 7);
-        if (!monthlyData[monthKey]) monthlyData[monthKey] = { income: 0, expense: 0 };
-        monthlyData[monthKey].expense += s.cost;
+        var key = s.date.substring(0, 7);
+        if (!monthlyData[key]) monthlyData[key] = { income: 0, expense: 0 };
+        monthlyData[key].expense += s.cost;
     });
 
-    const sortedMonths = Object.keys(monthlyData).sort();
-
-    // Ay isimlerini Türkçe göster
-    const turkishMonths = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
-    const labels = sortedMonths.map(m => {
-        const [y, mo] = m.split('-');
-        return `${turkishMonths[parseInt(mo) - 1]} ${y}`;
-    });
-
-    const incomeData = sortedMonths.map(m => monthlyData[m].income);
-    const expenseData = sortedMonths.map(m => monthlyData[m].expense);
-
-    if (monthlyChartInstance) {
-        monthlyChartInstance.destroy();
-    }
-
+    var sortedMonths = Object.keys(monthlyData).sort();
     if (sortedMonths.length === 0) return;
 
-    monthlyChartInstance = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Gelir',
-                    data: incomeData,
-                    backgroundColor: 'rgba(52, 211, 153, 0.6)',
-                    borderColor: 'rgba(52, 211, 153, 1)',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                    barPercentage: 0.6
-                },
-                {
-                    label: 'Gider',
-                    data: expenseData,
-                    backgroundColor: 'rgba(248, 113, 113, 0.6)',
-                    borderColor: 'rgba(248, 113, 113, 1)',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                    barPercentage: 0.6
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#7a8599',
-                        font: { family: 'Inter', size: 12 },
-                        usePointStyle: true,
-                        pointStyle: 'rectRounded'
-                    }
-                },
-                tooltip: {
-                    backgroundColor: '#181b24',
-                    borderColor: 'rgba(255,255,255,0.08)',
-                    borderWidth: 1,
-                    titleFont: { family: 'Inter', size: 13 },
-                    bodyFont: { family: 'Inter', size: 12 },
-                    callbacks: {
-                        label: function(context) {
-                            return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
-                        }
-                    }
-                }
+    var turkMonths = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+    var labels = sortedMonths.map(function(m) {
+        var parts = m.split('-');
+        return turkMonths[parseInt(parts[1]) - 1] + ' ' + parts[0];
+    });
+    var incomeData = sortedMonths.map(function(m) { return monthlyData[m].income; });
+    var expenseData = sortedMonths.map(function(m) { return monthlyData[m].expense; });
+
+    if (monthlyChartInstance) monthlyChartInstance.destroy();
+
+    try {
+        monthlyChartInstance = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Gelir', data: incomeData, backgroundColor: 'rgba(52,211,153,0.6)', borderColor: 'rgba(52,211,153,1)', borderWidth: 1, borderRadius: 6, barPercentage: 0.6 },
+                    { label: 'Gider', data: expenseData, backgroundColor: 'rgba(248,113,113,0.6)', borderColor: 'rgba(248,113,113,1)', borderWidth: 1, borderRadius: 6, barPercentage: 0.6 }
+                ]
             },
-            scales: {
-                x: {
-                    ticks: { color: '#7a8599', font: { family: 'Inter', size: 11 } },
-                    grid: { color: 'rgba(255,255,255,0.03)' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#7a8599', font: { size: 12 }, usePointStyle: true } },
+                    tooltip: {
+                        backgroundColor: '#181b24',
+                        callbacks: { label: function(ctx) { return ctx.dataset.label + ': ' + formatCurrency(ctx.parsed.y); } }
+                    }
                 },
-                y: {
-                    ticks: {
-                        color: '#7a8599',
-                        font: { family: 'Inter', size: 11 },
-                        callback: function(value) { return formatCurrency(value); }
-                    },
-                    grid: { color: 'rgba(255,255,255,0.03)' }
+                scales: {
+                    x: { ticks: { color: '#7a8599', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.03)' } },
+                    y: { ticks: { color: '#7a8599', font: { size: 11 }, callback: function(v) { return formatCurrency(v); } }, grid: { color: 'rgba(255,255,255,0.03)' } }
                 }
             }
-        }
-    });
+        });
+    } catch(e) { console.error("Chart error:", e); }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  10. RAPORLAR SEKMESİ
+//  10. RAPORLAR
 // ═══════════════════════════════════════════════════════════════
 function populateReportMonthSelector() {
-    const select = document.getElementById("reportMonth");
+    var select = document.getElementById("reportMonth");
     if (!select) return;
 
-    const months = new Set();
-    state.sales.forEach(s => { if (s.date) months.add(s.date.substring(0, 7)); });
-    state.stocks.forEach(s => { if (s.date) months.add(s.date.substring(0, 7)); });
+    var months = {};
+    state.sales.forEach(function(s) { if (s.date) months[s.date.substring(0, 7)] = true; });
+    state.stocks.forEach(function(s) { if (s.date) months[s.date.substring(0, 7)] = true; });
 
-    const sorted = Array.from(months).sort().reverse();
+    var sorted = Object.keys(months).sort().reverse();
+    var currentVal = select.value;
 
-    const currentVal = select.value;
-    select.innerHTML = `<option value="all">Tüm Zamanlar</option>`;
-
-    const turkishMonths = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    sorted.forEach(m => {
-        const [y, mo] = m.split('-');
-        select.innerHTML += `<option value="${m}">${turkishMonths[parseInt(mo) - 1]} ${y}</option>`;
+    var turkMonths = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    var html = '<option value="all">Tüm Zamanlar</option>';
+    sorted.forEach(function(m) {
+        var parts = m.split('-');
+        html += '<option value="' + m + '">' + turkMonths[parseInt(parts[1]) - 1] + ' ' + parts[0] + '</option>';
     });
-
+    select.innerHTML = html;
     if (currentVal) select.value = currentVal;
 }
 
 function renderReports() {
-    const selectedMonth = document.getElementById("reportMonth")?.value || 'all';
-    const fin = calculateFinancials();
+    var selectedMonth = document.getElementById("reportMonth") ? document.getElementById("reportMonth").value : 'all';
 
-    // Filtreleme
-    let filteredSales = state.sales;
-    let filteredStocks = state.stocks;
-    let filteredTahsilatlar = state.tahsilatlar;
-    let filteredPartners = state.partners;
+    var filteredSales = state.sales;
+    var filteredStocks = state.stocks;
+    var filteredTahsilatlar = state.tahsilatlar;
+    var filteredPartners = state.partners;
 
     if (selectedMonth !== 'all') {
-        filteredSales = state.sales.filter(s => s.date && s.date.startsWith(selectedMonth));
-        filteredStocks = state.stocks.filter(s => s.date && s.date.startsWith(selectedMonth));
-        filteredTahsilatlar = state.tahsilatlar.filter(t => t.date && t.date.startsWith(selectedMonth));
-        filteredPartners = state.partners.filter(p => p.date && p.date.startsWith(selectedMonth));
+        filteredSales = state.sales.filter(function(s) { return s.date && s.date.startsWith(selectedMonth); });
+        filteredStocks = state.stocks.filter(function(s) { return s.date && s.date.startsWith(selectedMonth); });
+        filteredTahsilatlar = state.tahsilatlar.filter(function(t) { return t.date && t.date.startsWith(selectedMonth); });
+        filteredPartners = state.partners.filter(function(p) { return p.date && p.date.startsWith(selectedMonth); });
     }
 
-    let totalCiro = 0, totalGider = 0, totalAlacak = 0;
-    let semihHarcama = 0, ekremHarcama = 0;
-    let semihTahsilat = 0, ekremTahsilat = 0;
-    let semihCekim = 0, ekremCekim = 0;
+    var totalCiro = 0, totalGider = 0, totalAlacak = 0;
+    var semihHarcama = 0, ekremHarcama = 0;
+    var semihTahsilat = 0, ekremTahsilat = 0;
+    var semihCekim = 0, ekremCekim = 0;
 
-    filteredSales.forEach(s => {
-        totalCiro += s.price;
-        totalAlacak += (s.price - s.paid);
+    filteredSales.forEach(function(s) { totalCiro += (s.price || 0); totalAlacak += ((s.price || 0) - (s.paid || 0)); });
+    filteredStocks.forEach(function(s) {
+        if (s.cost) { totalGider += s.cost; if (s.payer === "Semih") semihHarcama += s.cost; if (s.payer === "Ekrem") ekremHarcama += s.cost; }
     });
+    filteredTahsilatlar.forEach(function(t) { if (t.collector === "Semih") semihTahsilat += t.amount; if (t.collector === "Ekrem") ekremTahsilat += t.amount; });
+    filteredPartners.forEach(function(p) { if (p.type === "cekim_semih") semihCekim += p.amount; if (p.type === "cekim_ekrem") ekremCekim += p.amount; });
 
-    filteredStocks.forEach(s => {
-        if (s.cost) {
-            totalGider += s.cost;
-            if (s.payer === "Semih") semihHarcama += s.cost;
-            if (s.payer === "Ekrem") ekremHarcama += s.cost;
-        }
-    });
+    var netKar = totalCiro - totalGider;
+    var karPayi = netKar / 2;
 
-    filteredTahsilatlar.forEach(t => {
-        if (t.collector === "Semih") semihTahsilat += t.amount;
-        if (t.collector === "Ekrem") ekremTahsilat += t.amount;
-    });
+    var setVal = function(id, val) { var e = document.getElementById(id); if (e) e.innerText = val; };
+    var setColor = function(id, color) { var e = document.getElementById(id); if (e) e.style.color = color; };
 
-    filteredPartners.forEach(p => {
-        if (p.type === "cekim_semih") semihCekim += p.amount;
-        if (p.type === "cekim_ekrem") ekremCekim += p.amount;
-    });
+    setVal("reportCiro", formatCurrency(totalCiro));
+    setVal("reportGider", formatCurrency(totalGider));
+    setVal("reportKar", formatCurrency(netKar));
+    setColor("reportKar", netKar >= 0 ? 'var(--accent-green)' : 'var(--danger-red)');
+    setVal("reportAlacak", formatCurrency(totalAlacak));
 
-    const netKar = totalCiro - totalGider;
-    const karPayi = netKar / 2;
+    setVal("rptSemihKarPay", formatCurrency(karPayi));
+    setVal("rptSemihHarcama", formatCurrency(semihHarcama));
+    setVal("rptSemihTahsilat", formatCurrency(semihTahsilat));
+    setVal("rptSemihCekim", formatCurrency(semihCekim));
+    var semihNet = karPayi - semihTahsilat - semihCekim + semihHarcama;
+    setVal("rptSemihNet", formatCurrency(semihNet));
+    setColor("rptSemihNet", semihNet >= 0 ? 'var(--accent-green)' : 'var(--danger-red)');
 
-    // Özet kartlar
-    document.getElementById("reportCiro").innerText = formatCurrency(totalCiro);
-    document.getElementById("reportGider").innerText = formatCurrency(totalGider);
-    document.getElementById("reportKar").innerText = formatCurrency(netKar);
-    document.getElementById("reportKar").style.color = netKar >= 0 ? 'var(--accent-green)' : 'var(--danger-red)';
-    document.getElementById("reportAlacak").innerText = formatCurrency(totalAlacak);
+    setVal("rptEkremKarPay", formatCurrency(karPayi));
+    setVal("rptEkremHarcama", formatCurrency(ekremHarcama));
+    setVal("rptEkremTahsilat", formatCurrency(ekremTahsilat));
+    setVal("rptEkremCekim", formatCurrency(ekremCekim));
+    var ekremNet = karPayi - ekremTahsilat - ekremCekim + ekremHarcama;
+    setVal("rptEkremNet", formatCurrency(ekremNet));
+    setColor("rptEkremNet", ekremNet >= 0 ? 'var(--accent-green)' : 'var(--danger-red)');
 
-    // Kâr dağıtım - Semih
-    document.getElementById("rptSemihKarPay").innerText = formatCurrency(karPayi);
-    document.getElementById("rptSemihHarcama").innerText = formatCurrency(semihHarcama);
-    document.getElementById("rptSemihTahsilat").innerText = formatCurrency(semihTahsilat);
-    document.getElementById("rptSemihCekim").innerText = formatCurrency(semihCekim);
-    const semihNet = karPayi - semihTahsilat - semihCekim + semihHarcama;
-    document.getElementById("rptSemihNet").innerText = formatCurrency(semihNet);
-    document.getElementById("rptSemihNet").style.color = semihNet >= 0 ? 'var(--accent-green)' : 'var(--danger-red)';
-
-    // Kâr dağıtım - Ekrem
-    document.getElementById("rptEkremKarPay").innerText = formatCurrency(karPayi);
-    document.getElementById("rptEkremHarcama").innerText = formatCurrency(ekremHarcama);
-    document.getElementById("rptEkremTahsilat").innerText = formatCurrency(ekremTahsilat);
-    document.getElementById("rptEkremCekim").innerText = formatCurrency(ekremCekim);
-    const ekremNet = karPayi - ekremTahsilat - ekremCekim + ekremHarcama;
-    document.getElementById("rptEkremNet").innerText = formatCurrency(ekremNet);
-    document.getElementById("rptEkremNet").style.color = ekremNet >= 0 ? 'var(--accent-green)' : 'var(--danger-red)';
-
-    // Kategori Grafiği
+    // Kategori grafiği
     renderCategoryChart(filteredStocks);
 }
 
 function renderCategoryChart(filteredStocks) {
-    const ctx = document.getElementById("categoryChart");
-    if (!ctx) return;
+    var canvas = document.getElementById("categoryChart");
+    if (!canvas || canvas.offsetParent === null) return;
 
-    const categoryTotals = {};
-    filteredStocks.forEach(s => {
+    var totals = {};
+    filteredStocks.forEach(function(s) {
         if (s.cost && s.category) {
-            if (!categoryTotals[s.category]) categoryTotals[s.category] = 0;
-            categoryTotals[s.category] += s.cost;
+            if (!totals[s.category]) totals[s.category] = 0;
+            totals[s.category] += s.cost;
         }
     });
 
-    const labels = Object.keys(categoryTotals);
-    const data = Object.values(categoryTotals);
+    var labels = Object.keys(totals);
+    var data = Object.values(totals);
 
-    const colors = [
-        'rgba(96, 165, 250, 0.7)',
-        'rgba(248, 113, 113, 0.7)',
-        'rgba(52, 211, 153, 0.7)',
-        'rgba(251, 191, 36, 0.7)',
-        'rgba(167, 139, 250, 0.7)',
-        'rgba(244, 114, 182, 0.7)',
-        'rgba(56, 189, 248, 0.7)',
-        'rgba(163, 230, 53, 0.7)'
-    ];
-
-    if (categoryChartInstance) {
-        categoryChartInstance.destroy();
-    }
-
+    if (categoryChartInstance) categoryChartInstance.destroy();
     if (labels.length === 0) return;
 
-    categoryChartInstance = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: colors.slice(0, labels.length),
-                borderColor: 'rgba(24, 27, 36, 1)',
-                borderWidth: 3,
-                hoverOffset: 8
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        color: '#7a8599',
-                        font: { family: 'Inter', size: 12 },
-                        usePointStyle: true,
-                        padding: 16
-                    }
-                },
-                tooltip: {
-                    backgroundColor: '#181b24',
-                    borderColor: 'rgba(255,255,255,0.08)',
-                    borderWidth: 1,
-                    titleFont: { family: 'Inter', size: 13 },
-                    bodyFont: { family: 'Inter', size: 12 },
-                    callbacks: {
-                        label: function(context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percentage = ((context.parsed / total) * 100).toFixed(1);
-                            return `${context.label}: ${formatCurrency(context.parsed)} (${percentage}%)`;
+    var colors = ['rgba(96,165,250,0.7)', 'rgba(248,113,113,0.7)', 'rgba(52,211,153,0.7)', 'rgba(251,191,36,0.7)', 'rgba(167,139,250,0.7)', 'rgba(244,114,182,0.7)', 'rgba(56,189,248,0.7)', 'rgba(163,230,53,0.7)'];
+
+    try {
+        categoryChartInstance = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{ data: data, backgroundColor: colors.slice(0, labels.length), borderColor: 'rgba(24,27,36,1)', borderWidth: 3, hoverOffset: 8 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#7a8599', font: { size: 12 }, usePointStyle: true, padding: 16 } },
+                    tooltip: {
+                        backgroundColor: '#181b24',
+                        callbacks: {
+                            label: function(ctx) {
+                                var total = ctx.dataset.data.reduce(function(a, b) { return a + b; }, 0);
+                                var pct = ((ctx.parsed / total) * 100).toFixed(1);
+                                return ctx.label + ': ' + formatCurrency(ctx.parsed) + ' (' + pct + '%)';
+                            }
                         }
                     }
                 }
             }
-        }
-    });
+        });
+    } catch(e) { console.error("Category chart error:", e); }
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  11. DIŞA AKTARMA (CSV / EXCEL)
+//  11. DIŞA AKTARMA (CSV)
 // ═══════════════════════════════════════════════════════════════
 function downloadCSV(filename, csvContent) {
-    // BOM ekle (Excel'de Türkçe karakter desteği)
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
+    var BOM = '\uFEFF';
+    var blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    var link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = filename;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
 }
 
 function exportSales() {
-    if (state.sales.length === 0) {
-        showToast('warning', 'Veri Yok', 'Dışa aktarılacak satış kaydı bulunamadı.');
-        return;
-    }
-
-    let csv = 'Tarih,Müşteri,Model,Satış Tutarı,Tahsil Edilen,Kalan Alacak\n';
-    state.sales.forEach(s => {
-        csv += `${formatDateForDisplay(s.date)},"${s.customer}","${s.model}",${s.price},${s.paid},${s.price - s.paid}\n`;
+    if (state.sales.length === 0) { showToast('warning', 'Veri Yok', 'Satış kaydı bulunamadı.'); return; }
+    var csv = 'Tarih,Müşteri,Model,Satış Tutarı,Tahsil Edilen,Kalan\n';
+    state.sales.forEach(function(s) {
+        csv += formatDateForDisplay(s.date) + ',"' + s.customer + '","' + s.model + '",' + s.price + ',' + s.paid + ',' + (s.price - s.paid) + '\n';
     });
-
-    downloadCSV(`panzico_satislar_${getTodayForInput()}.csv`, csv);
-    showToast('success', 'Dışa Aktarıldı', 'Satış verileri CSV olarak indirildi.');
+    downloadCSV('panzico_satislar_' + getTodayForInput() + '.csv', csv);
+    showToast('success', 'İndirildi', 'Satış verileri CSV olarak indirildi.');
 }
 
 function exportExpenses() {
-    const expenses = state.stocks.filter(s => s.cost && s.cost > 0);
-    if (expenses.length === 0) {
-        showToast('warning', 'Veri Yok', 'Dışa aktarılacak gider kaydı bulunamadı.');
-        return;
-    }
-
-    let csv = 'Tarih,Kalem,Kategori,Miktar,Tutar,Ödeyen\n';
-    expenses.forEach(s => {
-        const unitText = s.unit ? ` ${s.unit}` : "";
-        csv += `${formatDateForDisplay(s.date)},"${s.name}","${s.category}",${s.qty > 0 ? s.qty + unitText : '-'},${s.cost},"${s.payer}"\n`;
+    var expenses = state.stocks.filter(function(s) { return s.cost && s.cost > 0; });
+    if (expenses.length === 0) { showToast('warning', 'Veri Yok', 'Gider kaydı bulunamadı.'); return; }
+    var csv = 'Tarih,Kalem,Kategori,Tutar,Ödeyen\n';
+    expenses.forEach(function(s) {
+        csv += formatDateForDisplay(s.date) + ',"' + s.name + '","' + s.category + '",' + s.cost + ',"' + s.payer + '"\n';
     });
-
-    downloadCSV(`panzico_giderler_${getTodayForInput()}.csv`, csv);
-    showToast('success', 'Dışa Aktarıldı', 'Gider verileri CSV olarak indirildi.');
+    downloadCSV('panzico_giderler_' + getTodayForInput() + '.csv', csv);
+    showToast('success', 'İndirildi', 'Gider verileri CSV olarak indirildi.');
 }
 
 function exportPartner() {
-    if (state.partners.length === 0) {
-        showToast('warning', 'Veri Yok', 'Dışa aktarılacak cari kayıt bulunamadı.');
-        return;
-    }
-
-    let csv = 'Tarih,İşlem Tipi,Tutar,Açıklama\n';
-    state.partners.forEach(p => {
-        const labels = {
-            'cekim_semih': 'Semih Kâr Çekimi',
-            'cekim_ekrem': 'Ekrem Kâr Çekimi',
-            'odeme_ekrem_semihe': 'Ekrem → Semih Borç Ödeme',
-            'odeme_semih_ekreme': 'Semih → Ekrem Borç Ödeme'
-        };
-        csv += `${formatDateForDisplay(p.date)},"${labels[p.type] || p.type}",${p.amount},"${p.note}"\n`;
+    if (state.partners.length === 0) { showToast('warning', 'Veri Yok', 'Cari kayıt bulunamadı.'); return; }
+    var labels = { 'cekim_semih': 'Semih Kâr Çekimi', 'cekim_ekrem': 'Ekrem Kâr Çekimi', 'odeme_ekrem_semihe': 'Ekrem→Semih Borç Ödeme', 'odeme_semih_ekreme': 'Semih→Ekrem Borç Ödeme' };
+    var csv = 'Tarih,İşlem,Tutar,Açıklama\n';
+    state.partners.forEach(function(p) {
+        csv += formatDateForDisplay(p.date) + ',"' + (labels[p.type] || p.type) + '",' + p.amount + ',"' + p.note + '"\n';
     });
-
-    downloadCSV(`panzico_cari_${getTodayForInput()}.csv`, csv);
-    showToast('success', 'Dışa Aktarıldı', 'Cari hesap verileri CSV olarak indirildi.');
+    downloadCSV('panzico_cari_' + getTodayForInput() + '.csv', csv);
+    showToast('success', 'İndirildi', 'Cari veriler CSV olarak indirildi.');
 }
 
 function exportReports() {
-    const fin = calculateFinancials();
-    let csv = 'Panzico Tufting Atölyesi - Finansal Rapor\n';
-    csv += `Rapor Tarihi,${formatDateForDisplay(getTodayForInput())}\n\n`;
-    csv += `Toplam Ciro,${fin.totalSales}\n`;
-    csv += `Toplam Gider,${fin.totalExpenses}\n`;
-    csv += `Net Kâr,${fin.netProfit}\n`;
-    csv += `Bekleyen Alacak,${fin.totalReceivables}\n\n`;
-    csv += `Semih Harcama,${fin.semihHarcama}\n`;
-    csv += `Semih Tahsilat,${fin.semihTahsilat}\n`;
-    csv += `Ekrem Harcama,${fin.ekremHarcama}\n`;
-    csv += `Ekrem Tahsilat,${fin.ekremTahsilat}\n`;
-
-    downloadCSV(`panzico_rapor_${getTodayForInput()}.csv`, csv);
-    showToast('success', 'Rapor İndirildi', 'Finansal rapor CSV olarak indirildi.');
+    var fin = calculateFinancials();
+    var csv = 'Panzico Finansal Rapor\nTarih,' + formatDateForDisplay(getTodayForInput()) + '\n\n';
+    csv += 'Toplam Ciro,' + fin.totalSales + '\nToplam Gider,' + fin.totalExpenses + '\nNet Kâr,' + fin.netProfit + '\nAlacak,' + fin.totalReceivables + '\n\n';
+    csv += 'Semih Harcama,' + fin.semihHarcama + '\nSemih Tahsilat,' + fin.semihTahsilat + '\nEkrem Harcama,' + fin.ekremHarcama + '\nEkrem Tahsilat,' + fin.ekremTahsilat + '\n';
+    downloadCSV('panzico_rapor_' + getTodayForInput() + '.csv', csv);
+    showToast('success', 'İndirildi', 'Finansal rapor indirildi.');
 }
 
 function exportAllData() {
-    let csv = 'Panzico Tüm Veri Yedeği\n';
-    csv += `Yedek Tarihi: ${formatDateForDisplay(getTodayForInput())}\n\n`;
-
-    csv += '=== SATIŞLAR ===\n';
-    csv += 'Tarih,Müşteri,Model,Fiyat,Tahsil,Kalan\n';
-    state.sales.forEach(s => {
-        csv += `${formatDateForDisplay(s.date)},"${s.customer}","${s.model}",${s.price},${s.paid},${s.price - s.paid}\n`;
-    });
-
-    csv += '\n=== GİDERLER ===\n';
-    csv += 'Tarih,Kalem,Kategori,Tutar,Ödeyen\n';
-    state.stocks.forEach(s => {
-        if (s.cost) csv += `${formatDateForDisplay(s.date)},"${s.name}","${s.category}",${s.cost},"${s.payer}"\n`;
-    });
-
-    csv += '\n=== ORTAKLIK HAREKETLERİ ===\n';
-    csv += 'Tarih,Tip,Tutar,Not\n';
-    state.partners.forEach(p => {
-        csv += `${formatDateForDisplay(p.date)},"${p.type}",${p.amount},"${p.note}"\n`;
-    });
-
-    csv += '\n=== TAHSİLATLAR ===\n';
-    csv += 'Tarih,Müşteri,Model,Tutar,Alan\n';
-    state.tahsilatlar.forEach(t => {
-        csv += `${formatDateForDisplay(t.date)},"${t.customer}","${t.model}",${t.amount},"${t.collector}"\n`;
-    });
-
-    downloadCSV(`panzico_tam_yedek_${getTodayForInput()}.csv`, csv);
-    showToast('success', 'Yedek Alındı', 'Tüm veriler CSV dosyası olarak indirildi.');
+    var csv = 'Panzico Tam Veri Yedeği\nTarih: ' + formatDateForDisplay(getTodayForInput()) + '\n\n';
+    csv += '=== SATIŞLAR ===\nTarih,Müşteri,Model,Fiyat,Tahsil,Kalan\n';
+    state.sales.forEach(function(s) { csv += formatDateForDisplay(s.date) + ',"' + s.customer + '","' + s.model + '",' + s.price + ',' + s.paid + ',' + (s.price - s.paid) + '\n'; });
+    csv += '\n=== GİDERLER ===\nTarih,Kalem,Kategori,Tutar,Ödeyen\n';
+    state.stocks.forEach(function(s) { if (s.cost) csv += formatDateForDisplay(s.date) + ',"' + s.name + '","' + s.category + '",' + s.cost + ',"' + s.payer + '"\n'; });
+    csv += '\n=== ORTAKLIK ===\nTarih,Tip,Tutar,Not\n';
+    state.partners.forEach(function(p) { csv += formatDateForDisplay(p.date) + ',"' + p.type + '",' + p.amount + ',"' + p.note + '"\n'; });
+    csv += '\n=== TAHSİLATLAR ===\nTarih,Müşteri,Model,Tutar,Alan\n';
+    state.tahsilatlar.forEach(function(t) { csv += formatDateForDisplay(t.date) + ',"' + (t.customer||'') + '","' + (t.model||'') + '",' + t.amount + ',"' + t.collector + '"\n'; });
+    downloadCSV('panzico_tam_yedek_' + getTodayForInput() + '.csv', csv);
+    showToast('success', 'Yedek Alındı', 'Tüm veriler indirildi.');
 }

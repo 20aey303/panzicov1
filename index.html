@@ -29,7 +29,8 @@
             <nav class="nav-menu">
                 <button class="nav-btn active" data-tab="dashboard">📊 Dashboard</button>
                 <button class="nav-btn" data-tab="calculator">🧮 Maliyet Hesaplayıcı</button>
-                <button class="nav-btn" data-tab="stock">📦 Stok ve Satın Alma</button>
+                <button class="nav-btn" data-tab="stock">📦 Stok ve Katalog</button>
+                <button class="nav-btn" data-tab="expenses">💸 Giderler</button>
                 <button class="nav-btn" data-tab="sales">🧾 Satış Defteri</button>
                 <button class="nav-btn" data-tab="partner">🤝 Ortaklık & Cari Hesap</button>
                 <button class="nav-btn" data-tab="reports">📈 Raporlar</button>
@@ -37,19 +38,19 @@
         </aside>
 
         <main class="main-content">
-            
-            <!-- ═══════════════════════════════════════════
-                 DASHBOARD
-                 ═══════════════════════════════════════════ -->
+
+            <!-- ════════════════════════════════════════
+                 TAB 1: DASHBOARD
+                 ════════════════════════════════════════ -->
             <section class="tab-panel active" id="dashboard">
                 <div class="panel-header">
                     <h1>Atölye Kontrol Merkezi</h1>
-                    <div style="display: flex; gap: 10px; align-items: center;">
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                         <button class="export-btn" onclick="exportAllData()">📥 Veri Yedekle</button>
                         <button class="danger-button" id="resetDataBtn">Tüm Verileri Sıfırla</button>
                     </div>
                 </div>
-                
+
                 <div class="stats-grid">
                     <div class="stat-card">
                         <h3>Net Kâr / Zarar</h3>
@@ -58,41 +59,41 @@
                     </div>
                     <div class="stat-card">
                         <h3>Cari Mutabakat Durumu</h3>
-                        <div class="stat-value alert" id="dashMutabakat" style="font-size: 16px; line-height: 1.4;">Hesaplar Hesaplanıyor...</div>
+                        <div class="stat-value alert" id="dashMutabakat" style="font-size:16px; line-height:1.4;">Hesaplanıyor...</div>
                         <p>Ortaklar arası borç/alacak</p>
                     </div>
-                    <div class="stat-card" style="cursor:pointer;" onclick="showDetails('gelirler')" title="Tıklayıp satış detaylarını görün">
+                    <div class="stat-card" style="cursor:pointer;" onclick="showDetails('gelirler')" title="Detay için tıkla">
                         <h3>Toplam Gelir (Ciro) 🔍</h3>
-                        <div class="stat-value" id="dashIncome" style="color: var(--accent-blue);">₺0,00</div>
+                        <div class="stat-value" id="dashIncome" style="color:var(--accent-blue);">₺0,00</div>
                         <p>Tüm satışlar (Detay için tıkla)</p>
                     </div>
-                    <div class="stat-card" style="cursor:pointer;" onclick="showDetails('alacaklar')" title="Tıklayıp bekleyen borçluları görün">
+                    <div class="stat-card" style="cursor:pointer;" onclick="showDetails('alacaklar')" title="Detay için tıkla">
                         <h3>Toplam Alacaklar 🔍</h3>
                         <div class="stat-value alert" id="dashReceivables">₺0,00</div>
                         <p>Müşteriden Beklenen (Detay tıkla)</p>
                     </div>
-                    <div class="stat-card" style="border-top: 3px solid var(--danger-red); cursor:pointer;" onclick="showDetails('giderler')" title="Tıklayıp tüm giderleri görün">
+                    <div class="stat-card" style="border-top:3px solid var(--danger-red); cursor:pointer;" onclick="showDetails('giderler')" title="Detay için tıkla">
                         <h3>Toplam Giderler 🔍</h3>
-                        <div class="stat-value" id="dashExpenses" style="color: var(--danger-red);">₺0,00</div>
+                        <div class="stat-value" id="dashExpenses" style="color:var(--danger-red);">₺0,00</div>
                         <p>Harcamalar (Detay için tıkla)</p>
                     </div>
                 </div>
 
                 <div class="stats-grid partner-stats">
-                    <div class="stat-card partner-card semih" style="cursor:pointer;" onclick="showPartnerDetails('Semih')" title="Semih'in hesap hareketleri için tıkla">
+                    <div class="stat-card partner-card semih" style="cursor:pointer;" onclick="showPartnerDetails('Semih')" title="Detay için tıkla">
                         <h3>Semih Cari Durum 🔍</h3>
                         <div class="stat-value" id="dashSemih">Atölye Harcaması: ₺0,00</div>
-                        <p id="dashSemihTahsilat" style="color: var(--accent-blue); margin-top: 5px;">Cebine Giren Tahsilat: ₺0,00</p>
+                        <p id="dashSemihTahsilat" style="color:var(--accent-blue); margin-top:5px;">Cebine Giren Tahsilat: ₺0,00</p>
                     </div>
-                    <div class="stat-card partner-card ekrem" style="cursor:pointer;" onclick="showPartnerDetails('Ekrem')" title="Ekrem'in hesap hareketleri için tıkla">
+                    <div class="stat-card partner-card ekrem" style="cursor:pointer;" onclick="showPartnerDetails('Ekrem')" title="Detay için tıkla">
                         <h3>Ekrem Cari Durum 🔍</h3>
                         <div class="stat-value" id="dashEkrem">Atölye Harcaması: ₺0,00</div>
-                        <p id="dashEkremTahsilat" style="color: var(--accent-purple); margin-top: 5px;">Cebine Giren Tahsilat: ₺0,00</p>
+                        <p id="dashEkremTahsilat" style="color:var(--accent-purple); margin-top:5px;">Cebine Giren Tahsilat: ₺0,00</p>
                     </div>
                 </div>
 
                 <!-- Dashboard Chart -->
-                <div class="panel-box" style="margin-bottom: 25px;">
+                <div class="panel-box">
                     <h3>📊 Aylık Gelir / Gider Trendi</h3>
                     <div class="chart-container">
                         <canvas id="monthlyChart"></canvas>
@@ -103,19 +104,14 @@
                     <div class="panel-box">
                         <h3>Kritik Stok Uyarıları</h3>
                         <table class="data-table">
-                            <thead>
-                                <tr><th>Malzeme</th><th>Miktar</th><th>Kritik Eşik</th><th>Durum</th></tr>
-                            </thead>
+                            <thead><tr><th>Malzeme</th><th>Miktar</th><th>Kritik Eşik</th><th>Durum</th></tr></thead>
                             <tbody id="dashStockAlerts"></tbody>
                         </table>
                     </div>
-
-                    <form class="panel-box" id="quickExpenseForm" style="border: 1px solid rgba(52, 211, 153, 0.2);">
+                    <form class="panel-box" id="quickExpenseForm" style="border:1px solid rgba(52,211,153,0.2);">
                         <h3>⚡ Hızlı Gider İşle</h3>
                         <label>Gider Kalemi
-                            <select id="quickExpenseItem" required>
-                                <option value="">Önce stoktan kalem tanımlayın</option>
-                            </select>
+                            <select id="quickExpenseItem" required><option value="">Önce stoktan kalem tanımlayın</option></select>
                         </label>
                         <div class="form-grid">
                             <label>İşlem Tarihi <input type="date" id="quickExpenseDate" required></label>
@@ -131,63 +127,81 @@
                     </form>
                 </div>
 
-                <div class="panel-box" style="margin-top: 5px; border-left: 3px solid var(--accent-yellow);">
-                    <h3>⏳ Bekleyen Alacaklar (Borçlu Müşteriler Listesi)</h3>
+                <div class="panel-box" style="margin-top:5px; border-left:3px solid var(--accent-yellow);">
+                    <h3>⏳ Bekleyen Alacaklar (Borçlu Müşteriler)</h3>
                     <table class="data-table">
-                        <thead>
-                            <tr><th>Tarih</th><th>Müşteri Adı</th><th>Halı Modeli</th><th>Toplam Satış</th><th>Tahsil Edilen</th><th>Kalan Borç</th><th>Aksiyon</th></tr>
-                        </thead>
+                        <thead><tr><th>Tarih</th><th>Müşteri</th><th>Halı Modeli</th><th>Toplam</th><th>Tahsil</th><th>Kalan</th><th>Aksiyon</th></tr></thead>
                         <tbody id="dashDebtorsTableBody"></tbody>
                     </table>
                 </div>
-
             </section>
 
-            <!-- ═══════════════════════════════════════════
-                 MALİYET HESAPLAYICI
-                 ═══════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════
+                 TAB 2: MALİYET HESAPLAYICI
+                 ════════════════════════════════════════ -->
             <section class="tab-panel" id="calculator">
                 <div class="panel-header">
                     <h1>Maliyet ve Fiyat Hesaplayıcı</h1>
                 </div>
                 <div class="grid-2-1">
                     <form class="panel-box" id="calcForm">
+                        <h3 style="border-left-color:var(--accent-blue);">🧶 İplik Bilgileri</h3>
                         <div class="form-grid">
-                            <label>İp Gramajı (g) <input type="number" id="calcYarnWeight" value="1000" min="1" required></label>
-                            <label>İp KG Fiyatı (TL) <input type="number" id="calcYarnPrice" value="180" min="0" required></label>
+                            <label>İplik Top Gramajı (g) <input type="number" id="calcSpoolGrams" value="100" min="1" required></label>
+                            <label>İplik Top Fiyatı (TL) <input type="number" id="calcSpoolPrice" value="80" min="0" step="0.01" required></label>
+                            <label>Kullanılacak İplik (g) <input type="number" id="calcYarnUsage" value="800" min="1" required></label>
+                        </div>
+                        <h3 style="margin-top:20px; border-left-color:var(--accent-purple);">📐 Halı & Kumaş Bilgileri</h3>
+                        <div class="form-grid">
                             <label>Halı Eni (cm) <input type="number" id="calcWidth" value="100" min="1" required></label>
                             <label>Halı Boyu (cm) <input type="number" id="calcHeight" value="150" min="1" required></label>
-                            <label>Kumaş m² Fiyatı (TL) <input type="number" id="calcClothPrice" value="95" min="0" required></label>
-                            <label>Tutkal Maliyeti (TL) <input type="number" id="calcGlueCost" value="120" min="0" required></label>
-                            <label>Kaydırmaz Taban (TL) <input type="number" id="calcBaseCost" value="75" min="0" required></label>
-                            <label>Elektrik / Sabit Gider (TL) <input type="number" id="calcFixCost" value="50" min="0" required></label>
-                            <label>İşçilik Maliyeti (TL) <input type="number" id="calcLaborCost" value="350" min="0" required></label>
+                            <label>Kumaş m² Fiyatı (TL) <input type="number" id="calcClothPrice" value="95" min="0" step="0.01" required></label>
+                        </div>
+                        <h3 style="margin-top:20px; border-left-color:var(--accent-yellow);">🧴 Diğer Malzemeler</h3>
+                        <div class="form-grid">
+                            <label>Tutkal Maliyeti (TL) <input type="number" id="calcGlueCost" value="120" min="0" step="0.01" required></label>
+                            <label>Kaydırmaz Taban (TL) <input type="number" id="calcBaseCost" value="75" min="0" step="0.01" required></label>
+                        </div>
+                        <h3 style="margin-top:20px; border-left-color:var(--danger-red);">🏭 Sabit Giderler</h3>
+                        <div class="form-grid">
+                            <label>Elektrik / Sabit Gider (TL) <input type="number" id="calcFixCost" value="50" min="0" step="0.01" required></label>
+                            <label>İşçilik Maliyeti (TL) <input type="number" id="calcLaborCost" value="350" min="0" step="0.01" required></label>
                             <label>Hedef Kâr Marjı (%) <input type="number" id="calcProfitMargin" value="45" min="0" max="500" required></label>
                         </div>
-                        <button type="submit" class="primary-button">Maliyeti Hesapla</button>
+                        <button type="submit" class="primary-button" style="margin-top:15px;">Maliyeti Hesapla</button>
                     </form>
                     <div class="panel-box result-box">
                         <h3>Hesaplama Sonuçları</h3>
-                        <div class="result-item"><span>Net Malzeme Maliyeti:</span><strong id="resMaterial">₺0,00</strong></div>
-                        <div class="result-item"><span>Toplam Net Maliyet:</span><strong id="resTotalCost">₺0,00</strong></div>
-                        <div class="result-item" style="border-top: 2px dashed rgba(255,255,255,0.08); padding-top: 15px;">
+                        <div class="result-item"><span>İplik Maliyeti:</span><strong id="resYarn">₺0,00</strong></div>
+                        <div class="result-item"><span>Gerekli Top Sayısı:</span><strong id="resSpools">0 top</strong></div>
+                        <div class="result-item"><span>Kumaş Maliyeti:</span><strong id="resCloth">₺0,00</strong></div>
+                        <div class="result-item"><span>Diğer Malzeme:</span><strong id="resOther">₺0,00</strong></div>
+                        <div class="result-item" style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:12px; margin-top:4px;">
+                            <span>Toplam Malzeme:</span><strong id="resMaterial">₺0,00</strong>
+                        </div>
+                        <div class="result-item"><span>Sabit Gider + İşçilik:</span><strong id="resFixed">₺0,00</strong></div>
+                        <div class="result-item" style="border-top:1px dashed rgba(255,255,255,0.1); padding-top:12px; margin-top:4px;">
+                            <span>Toplam Net Maliyet:</span><strong id="resTotalCost" style="color:var(--accent-yellow);">₺0,00</strong>
+                        </div>
+                        <div class="result-item" style="border-top:2px solid rgba(255,255,255,0.1); padding-top:15px; margin-top:8px;">
                             <span>Önerilen Satış Fiyatı:</span><strong id="resSalePrice" class="text-green">₺0,00</strong>
                         </div>
+                        <div class="result-item"><span>Kâr Tutarı:</span><strong id="resProfit" style="color:var(--accent-green);">₺0,00</strong></div>
                     </div>
                 </div>
             </section>
 
-            <!-- ═══════════════════════════════════════════
-                 STOK VE SATIN ALMA
-                 ═══════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════
+                 TAB 3: STOK VE KATALOG
+                 ════════════════════════════════════════ -->
             <section class="tab-panel" id="stock">
                 <div class="panel-header">
                     <h1>Ürün Kataloğu & Stok Yönetimi</h1>
                 </div>
 
-                <div class="panel-box" style="margin-bottom: 25px; border-left: 3px solid var(--accent-blue);">
+                <div class="panel-box" style="margin-bottom:25px; border-left:3px solid var(--accent-blue);">
                     <h3>📖 1. Adım: Yeni Gider / Ürün Kalemi Tanımla (Katalog)</h3>
-                    <form id="catalogForm" class="form-grid" style="align-items: end;">
+                    <form id="catalogForm" class="form-grid" style="align-items:end;">
                         <label>Kategori
                             <input type="text" id="catalogCategory" list="catDatalist" placeholder="Örn: İp, Reklam, Sabit Gider..." required>
                             <datalist id="catDatalist">
@@ -201,17 +215,15 @@
                         </label>
                         <label>Kalem Adı <input type="text" id="catalogName" placeholder="Örn: Instagram Reklamı, Zümrüt İp" required></label>
                         <label>Birim (İsteğe Bağlı) <input type="text" id="catalogUnit" placeholder="Boş bırakabilirsiniz"></label>
-                        <button type="submit" class="primary-button" style="background: linear-gradient(135deg, var(--accent-blue), #4b96f7);">Kataloğa Ekle</button>
+                        <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--accent-blue), #4b96f7);">Kataloğa Ekle</button>
                     </form>
                 </div>
 
                 <div class="grid-1-2">
                     <form class="panel-box" id="stockForm">
-                        <h3>🛒 2. Adım: Stok ve Gider İşle</h3>
+                        <h3>🛒 2. Adım: Stok Girişi</h3>
                         <label>Katalogdan Seç
-                            <select id="stockItemSelect" required>
-                                <option value="">Önce yukarıdan kalem tanımlayın</option>
-                            </select>
+                            <select id="stockItemSelect" required><option value="">Önce yukarıdan kalem tanımlayın</option></select>
                         </label>
                         <div class="form-grid">
                             <label>İşlem Tarihi <input type="date" id="stockDate" required></label>
@@ -227,37 +239,93 @@
                         </label>
                         <button type="submit" class="primary-button">Stoğa Ekle ve Gideri Yaz</button>
                     </form>
+                    <div class="panel-box">
+                        <h3>Güncel Stok Durumu</h3>
+                        <table class="data-table">
+                            <thead><tr><th>Kategori</th><th>Malzeme</th><th>Stok</th><th>Eşik</th><th>Durum</th></tr></thead>
+                            <tbody id="stockTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ════════════════════════════════════════
+                 TAB 4: GİDERLER (YENİ)
+                 ════════════════════════════════════════ -->
+            <section class="tab-panel" id="expenses">
+                <div class="panel-header">
+                    <h1>Gider Yönetimi</h1>
+                    <button class="export-btn" onclick="exportExpenses()">📥 Giderleri Dışa Aktar</button>
+                </div>
+
+                <!-- Gider Özet Kartları -->
+                <div class="stats-grid" style="margin-bottom:20px;">
+                    <div class="stat-card">
+                        <h3>Toplam Gider</h3>
+                        <div class="stat-value" id="expTotalExpense" style="color:var(--danger-red);">₺0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Semih Harcaması</h3>
+                        <div class="stat-value" id="expSemihTotal" style="color:var(--accent-blue);">₺0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Ekrem Harcaması</h3>
+                        <div class="stat-value" id="expEkremTotal" style="color:var(--accent-purple);">₺0,00</div>
+                    </div>
+                </div>
+
+                <div class="grid-1-2">
+                    <form class="panel-box" id="expenseForm">
+                        <h3>💸 Yeni Gider Kaydı</h3>
+                        <label>Gider Kalemi
+                            <select id="expenseItem" required><option value="">Önce Stok sekmesinden kalem tanımlayın</option></select>
+                        </label>
+                        <label>İşlem Tarihi <input type="date" id="expenseDate" required></label>
+                        <div class="form-grid">
+                            <label>Miktar (varsa) <input type="number" id="expenseQty" step="0.01" min="0" value="0"></label>
+                            <label>Tutar (TL) <input type="number" id="expenseAmount" step="0.01" min="0.01" required></label>
+                        </div>
+                        <label>Kim Ödedi?
+                            <select id="expensePayer" required>
+                                <option value="Semih">Semih</option>
+                                <option value="Ekrem">Ekrem</option>
+                            </select>
+                        </label>
+                        <label>Açıklama (İsteğe Bağlı) <input type="text" id="expenseNote" placeholder="Ek not..."></label>
+                        <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--danger-red), #ef4444);">Gideri Kaydet</button>
+                    </form>
 
                     <div>
-                        <div class="panel-box">
-                            <h3>Güncel Stok Listesi ve Depo Durumu</h3>
-                            <table class="data-table">
-                                <thead>
-                                    <tr><th>Kategori</th><th>Malzeme</th><th>Stok Miktarı</th><th>Eşik</th><th>İşlem</th></tr>
-                                </thead>
-                                <tbody id="stockTableBody"></tbody>
-                            </table>
+                        <!-- Filtreler -->
+                        <div class="filter-bar">
+                            <button class="filter-btn active" onclick="setExpenseFilter('all', this)">Tümü</button>
+                            <button class="filter-btn" onclick="setExpenseFilter('month', this)">Bu Ay</button>
+                            <button class="filter-btn" onclick="setExpenseFilter('semih', this)">Semih</button>
+                            <button class="filter-btn" onclick="setExpenseFilter('ekrem', this)">Ekrem</button>
+                            <label style="flex-direction:row; align-items:center; margin:0; text-transform:none; letter-spacing:0; font-size:12px;">
+                                <span>Başlangıç:</span>
+                                <input type="date" id="expFilterStart" onchange="setExpenseFilter('custom')" style="padding:6px 8px; font-size:12px;">
+                            </label>
+                            <label style="flex-direction:row; align-items:center; margin:0; text-transform:none; letter-spacing:0; font-size:12px;">
+                                <span>Bitiş:</span>
+                                <input type="date" id="expFilterEnd" onchange="setExpenseFilter('custom')" style="padding:6px 8px; font-size:12px;">
+                            </label>
                         </div>
 
                         <div class="panel-box">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-                                <h3 style="margin-bottom: 0;">📋 Tüm Gider Kayıtları (Bireysel)</h3>
-                                <button class="export-btn" onclick="exportExpenses()">📥 Excel</button>
-                            </div>
+                            <h3>📋 Tüm Gider Kayıtları</h3>
                             <table class="data-table">
-                                <thead>
-                                    <tr><th>Tarih</th><th>Kalem</th><th>Kategori</th><th>Miktar</th><th>Tutar</th><th>Ödeyen</th><th>Sil</th></tr>
-                                </thead>
-                                <tbody id="expenseLogTableBody"></tbody>
+                                <thead><tr><th>Tarih</th><th>Kalem</th><th>Kategori</th><th>Miktar</th><th>Tutar</th><th>Ödeyen</th><th>Sil</th></tr></thead>
+                                <tbody id="expenseTableBody"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- ═══════════════════════════════════════════
-                 SATIŞ DEFTERİ
-                 ═══════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════
+                 TAB 5: SATIŞ DEFTERİ
+                 ════════════════════════════════════════ -->
             <section class="tab-panel" id="sales">
                 <div class="panel-header">
                     <h1>Sipariş ve Satış Defteri</h1>
@@ -273,10 +341,10 @@
                             <label>Satış Fiyatı (TL) <input type="number" id="salePrice" step="0.01" min="0.01" required></label>
                             <label>Tahsil Edilen (TL) <input type="number" id="salePaid" step="0.01" min="0" required></label>
                             <label>Tahsilatı Kim Aldı?
-                                <select id="saleCollector" required>
-                                    <option value="Semih">Semih (Kendi Cebine)</option>
-                                    <option value="Ekrem">Ekrem (Kendi Cebine)</option>
-                                    <option value="Kasa">Ortak Kasa</option>
+                                <select id="saleCollector">
+                                    <option value="">Belirtilmedi</option>
+                                    <option value="Semih">Semih</option>
+                                    <option value="Ekrem">Ekrem</option>
                                 </select>
                             </label>
                         </div>
@@ -284,31 +352,19 @@
                     </form>
 
                     <div>
-                        <!-- Search & Filter -->
                         <div class="search-bar">
-                            <input type="text" id="salesSearchInput" placeholder="Müşteri adı veya model ara..." oninput="filterSalesTable()">
+                            <input type="text" id="salesSearchInput" placeholder="Müşteri adı veya model ara..." oninput="renderSalesTable()">
                         </div>
                         <div class="filter-bar">
                             <button class="filter-btn active" onclick="setSalesFilter('all', this)">Tümü</button>
                             <button class="filter-btn" onclick="setSalesFilter('week', this)">Bu Hafta</button>
                             <button class="filter-btn" onclick="setSalesFilter('month', this)">Bu Ay</button>
                             <button class="filter-btn" onclick="setSalesFilter('debtor', this)">Borçlular</button>
-                            <label style="flex-direction:row; align-items:center; margin:0; text-transform:none; letter-spacing:0; font-size:12px;">
-                                <span>Başlangıç:</span>
-                                <input type="date" id="salesFilterStart" onchange="setSalesFilter('custom')" style="padding:6px 8px; font-size:12px;">
-                            </label>
-                            <label style="flex-direction:row; align-items:center; margin:0; text-transform:none; letter-spacing:0; font-size:12px;">
-                                <span>Bitiş:</span>
-                                <input type="date" id="salesFilterEnd" onchange="setSalesFilter('custom')" style="padding:6px 8px; font-size:12px;">
-                            </label>
                         </div>
-
                         <div class="panel-box">
                             <h3>Satış ve Sipariş Kayıtları</h3>
                             <table class="data-table">
-                                <thead>
-                                    <tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Satış Tutarı</th><th>Tahsil Edilen</th><th>Kalan Alacak</th><th>İşlem</th></tr>
-                                </thead>
+                                <thead><tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Satış</th><th>Tahsil</th><th>Kalan</th><th>İşlem</th></tr></thead>
                                 <tbody id="salesTableBody"></tbody>
                             </table>
                         </div>
@@ -316,17 +372,17 @@
                 </div>
             </section>
 
-            <!-- ═══════════════════════════════════════════
-                 ORTAKLIK & CARİ HESAP
-                 ═══════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════
+                 TAB 6: ORTAKLIK & CARİ HESAP
+                 ════════════════════════════════════════ -->
             <section class="tab-panel" id="partner">
                 <div class="panel-header">
                     <h1>Ortaklık Cari Hesapları & Nakit Çekim</h1>
-                    <button class="export-btn" onclick="exportPartner()">📥 Cari Ekstreyi Dışa Aktar</button>
+                    <button class="export-btn" onclick="exportPartner()">📥 Cari Dışa Aktar</button>
                 </div>
                 <div class="grid-1-2">
                     <form class="panel-box" id="partnerForm">
-                        <h3>Nakit Hareketi İşle (Kâr Çekimi veya Borç Ödeme)</h3>
+                        <h3>Nakit Hareketi İşle</h3>
                         <label>İşlem Tipi
                             <select id="partType" required>
                                 <option value="cekim_semih">Semih - Atölye Kârından Para Çekti</option>
@@ -342,77 +398,71 @@
                         <label>Açıklama Notu <input type="text" id="partNote" placeholder="Örn: Kargo masrafı için 50 TL gönderdim" required></label>
                         <button type="submit" class="primary-button">Hareketi Cari Hesaba İşle</button>
                     </form>
-
                     <div class="panel-box">
                         <h3>Nakit Çekim Logları</h3>
                         <table class="data-table">
-                            <thead>
-                                <tr><th>Tarih</th><th>Ortak İşlemi</th><th>Tutar</th><th>Açıklama</th><th>İşlem</th></tr>
-                            </thead>
+                            <thead><tr><th>Tarih</th><th>İşlem</th><th>Tutar</th><th>Açıklama</th><th>Sil</th></tr></thead>
                             <tbody id="partnerTableBody"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- ═══════════════════════════════════════════
-                 RAPORLAR
-                 ═══════════════════════════════════════════ -->
+            <!-- ════════════════════════════════════════
+                 TAB 7: RAPORLAR
+                 ════════════════════════════════════════ -->
             <section class="tab-panel" id="reports">
                 <div class="panel-header">
                     <h1>Finansal Raporlar & Kâr Dağıtımı</h1>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <select id="reportMonth" onchange="renderReports()" style="padding: 8px 12px; font-size: 13px;">
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <select id="reportMonth" onchange="renderReports()" style="padding:8px 12px; font-size:13px;">
                             <option value="all">Tüm Zamanlar</option>
                         </select>
                         <button class="export-btn" onclick="exportReports()">📥 Rapor İndir</button>
                     </div>
                 </div>
 
-                <!-- Monthly Summary -->
-                <div class="report-summary-grid" id="reportSummaryGrid">
+                <div class="report-summary-grid">
                     <div class="report-summary-item">
                         <div class="label">Toplam Ciro</div>
-                        <div class="value" id="reportCiro" style="color: var(--accent-blue);">₺0,00</div>
+                        <div class="value" id="reportCiro" style="color:var(--accent-blue);">₺0,00</div>
                     </div>
                     <div class="report-summary-item">
                         <div class="label">Toplam Gider</div>
-                        <div class="value" id="reportGider" style="color: var(--danger-red);">₺0,00</div>
+                        <div class="value" id="reportGider" style="color:var(--danger-red);">₺0,00</div>
                     </div>
                     <div class="report-summary-item">
                         <div class="label">Net Kâr</div>
-                        <div class="value" id="reportKar" style="color: var(--accent-green);">₺0,00</div>
+                        <div class="value" id="reportKar" style="color:var(--accent-green);">₺0,00</div>
                     </div>
                     <div class="report-summary-item">
                         <div class="label">Bekleyen Alacak</div>
-                        <div class="value" id="reportAlacak" style="color: var(--accent-yellow);">₺0,00</div>
+                        <div class="value" id="reportAlacak" style="color:var(--accent-yellow);">₺0,00</div>
                     </div>
                 </div>
 
-                <!-- Profit Distribution -->
                 <div class="panel-box">
                     <h3>💰 Kâr Dağıtım Tablosu (50/50 Ortaklık)</h3>
-                    <div class="profit-distribution-grid" id="profitDistGrid">
-                        <div class="profit-card" style="border-top: 3px solid var(--accent-blue);">
-                            <h4><span style="color: var(--accent-blue);">●</span> Semih</h4>
-                            <div class="profit-row"><span class="label">Kâr Payı (50%):</span><span id="rptSemihKarPay" style="color: var(--accent-green);">₺0,00</span></div>
-                            <div class="profit-row"><span class="label">Atölye Harcaması:</span><span id="rptSemihHarcama" style="color: var(--accent-blue);">₺0,00</span></div>
-                            <div class="profit-row"><span class="label">Aldığı Tahsilat:</span><span id="rptSemihTahsilat" style="color: var(--accent-yellow);">₺0,00</span></div>
-                            <div class="profit-row"><span class="label">Kâr Çekimi:</span><span id="rptSemihCekim" style="color: var(--danger-red);">₺0,00</span></div>
-                            <div class="profit-row"><span class="label">Net Durum:</span><span id="rptSemihNet">₺0,00</span></div>
+                    <div class="profit-distribution-grid">
+                        <div class="profit-card" style="border-top:3px solid var(--accent-blue);">
+                            <h4><span style="color:var(--accent-blue);">●</span> Semih</h4>
+                            <div class="profit-row"><span class="label">Kâr Payı (50%):</span><span id="rptSemihKarPay" style="color:var(--accent-green);">₺0</span></div>
+                            <div class="profit-row"><span class="label">Atölye Harcaması:</span><span id="rptSemihHarcama" style="color:var(--accent-blue);">₺0</span></div>
+                            <div class="profit-row"><span class="label">Aldığı Tahsilat:</span><span id="rptSemihTahsilat" style="color:var(--accent-yellow);">₺0</span></div>
+                            <div class="profit-row"><span class="label">Kâr Çekimi:</span><span id="rptSemihCekim" style="color:var(--danger-red);">₺0</span></div>
+                            <div class="profit-row"><span class="label">Net Durum:</span><span id="rptSemihNet">₺0</span></div>
                         </div>
-                        <div class="profit-card" style="border-top: 3px solid var(--accent-purple);">
-                            <h4><span style="color: var(--accent-purple);">●</span> Ekrem</h4>
-                            <div class="profit-row"><span class="label">Kâr Payı (50%):</span><span id="rptEkremKarPay" style="color: var(--accent-green);">₺0,00</span></div>
-                            <div class="profit-row"><span class="label">Atölye Harcaması:</span><span id="rptEkremHarcama" style="color: var(--accent-blue);">₺0,00</span></div>
-                            <div class="profit-row"><span class="label">Aldığı Tahsilat:</span><span id="rptEkremTahsilat" style="color: var(--accent-yellow);">₺0,00</span></div>
-                            <div class="profit-row"><span class="label">Kâr Çekimi:</span><span id="rptEkremCekim" style="color: var(--danger-red);">₺0,00</span></div>
-                            <div class="profit-row"><span class="label">Net Durum:</span><span id="rptEkremNet">₺0,00</span></div>
+                        <div class="profit-card" style="border-top:3px solid var(--accent-purple);">
+                            <h4><span style="color:var(--accent-purple);">●</span> Ekrem</h4>
+                            <div class="profit-row"><span class="label">Kâr Payı (50%):</span><span id="rptEkremKarPay" style="color:var(--accent-green);">₺0</span></div>
+                            <div class="profit-row"><span class="label">Atölye Harcaması:</span><span id="rptEkremHarcama" style="color:var(--accent-blue);">₺0</span></div>
+                            <div class="profit-row"><span class="label">Aldığı Tahsilat:</span><span id="rptEkremTahsilat" style="color:var(--accent-yellow);">₺0</span></div>
+                            <div class="profit-row"><span class="label">Kâr Çekimi:</span><span id="rptEkremCekim" style="color:var(--danger-red);">₺0</span></div>
+                            <div class="profit-row"><span class="label">Net Durum:</span><span id="rptEkremNet">₺0</span></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Monthly Chart in Reports -->
                 <div class="panel-box">
                     <h3>📊 Kategori Bazlı Gider Dağılımı</h3>
                     <div class="chart-container">
@@ -424,46 +474,42 @@
         </main>
     </div>
 
-    <!-- ═══════════════════════════════════════════
+    <!-- ════════════════════════════════════════
          TAHSİLAT MODAL
-         ═══════════════════════════════════════════ -->
-    <div class="modal-overlay" id="tahsilatModal">
-        <div class="modal-content" style="width: 400px;">
+         ════════════════════════════════════════ -->
+    <div id="tahsilatModal" class="modal-overlay">
+        <div class="modal-content" style="width:400px;">
             <div class="modal-header">
-                <h3 style="border-left: 3px solid var(--accent-green); padding-left: 12px; color: var(--text-bright);">💰 Tahsilat Detayı</h3>
+                <h3 style="border-left:3px solid var(--accent-green); padding-left:12px; color:var(--text-bright);">💰 Tahsilat Detayı</h3>
                 <button class="modal-close" onclick="closeTahsilatModal()">&times;</button>
             </div>
-            <p id="modalCustomerInfo" style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;"></p>
+            <p id="modalCustomerInfo" style="font-size:13px; color:var(--text-muted); margin-bottom:20px; line-height:1.5;"></p>
             <form id="modalTahsilatForm">
                 <div class="form-grid">
-                    <label>Tahsilat Tarihi
-                        <input type="date" id="modalDate" required>
-                    </label>
-                    <label>Alınan Tutar (TL)
-                        <input type="number" id="modalAmount" step="0.01" min="0.01" required>
-                    </label>
+                    <label>Tahsilat Tarihi <input type="date" id="modalDate" required></label>
+                    <label>Alınan Tutar (TL) <input type="number" id="modalAmount" step="0.01" min="0.01" required></label>
                 </div>
-                <label style="margin-top: 10px;">Ödemeyi Kim Teslim Aldı?
+                <label style="margin-top:10px;">Ödemeyi Kim Teslim Aldı?
                     <select id="modalCollector" required>
-                        <option value="Semih">Semih (Kendi Hesabına / Cebine Aldı)</option>
-                        <option value="Ekrem">Ekrem (Kendi Hesabına / Cebine Aldı)</option>
+                        <option value="Semih">Semih (Kendi Cebine Aldı)</option>
+                        <option value="Ekrem">Ekrem (Kendi Cebine Aldı)</option>
                     </select>
                 </label>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="submit" class="primary-button" style="background: linear-gradient(135deg, var(--accent-green), #2bc48a);">Tahsilatı İşle</button>
-                    <button type="button" class="primary-button" style="background: linear-gradient(135deg, var(--danger-red), #ef4444);" onclick="closeTahsilatModal()">İptal</button>
+                <div style="display:flex; gap:10px; margin-top:20px;">
+                    <button type="submit" class="primary-button">Tahsilatı İşle</button>
+                    <button type="button" class="primary-button" style="background:linear-gradient(135deg, var(--danger-red), #ef4444);" onclick="closeTahsilatModal()">İptal</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════
+    <!-- ════════════════════════════════════════
          DETAY MODAL
-         ═══════════════════════════════════════════ -->
-    <div class="modal-overlay" id="detailModal">
-        <div class="modal-content" style="width: 720px; max-height: 80vh; overflow-y: auto;">
+         ════════════════════════════════════════ -->
+    <div id="detailModal" class="modal-overlay">
+        <div class="modal-content" style="width:720px; max-height:80vh; overflow-y:auto;">
             <div class="modal-header">
-                <h3 id="detailModalTitle" style="border-left: 3px solid var(--accent-blue); padding-left: 12px; color: var(--text-bright);">Detaylar</h3>
+                <h3 id="detailModalTitle" style="border-left:3px solid var(--accent-blue); padding-left:12px; color:var(--text-bright);">Detaylar</h3>
                 <button class="modal-close" onclick="closeDetailModal()">&times;</button>
             </div>
             <table class="data-table">
