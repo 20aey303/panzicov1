@@ -18,7 +18,12 @@ const db = firebase.firestore();
 //  GLOBAL STATE
 // ═══════════════════════════════════════════════════════════════
 let state = {
-    catalog: [], stocks: [], sales: [], partners: [], tahsilatlar: []
+    catalog: [],
+    stocks: [],
+    sales: [],
+    partners: [],
+    tahsilatlar: [],
+    expenses: [] // YENİ EKLENDİ
 };
 
 let editingSaleId = null;
@@ -93,7 +98,7 @@ function formatDateForDisplay(dateStr) {
 
 function setDefaultDates() {
     var today = getTodayForInput();
-    var ids = ["stockDate", "quickExpenseDate", "saleDate", "partDate", "expenseDate"];
+    var ids = ["stockDate", "quickExpenseDate", "saleDate", "partDate", "expenseDate", "expFilterStart", "expFilterEnd"];
     ids.forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.value = today;
@@ -157,6 +162,12 @@ function listenToCloudData() {
         snapshot.forEach(function(doc) { state.tahsilatlar.push({ id: doc.id, ...doc.data() }); });
         renderAll();
     }, function(err) { console.error("Tahsilatlar error:", err); });
+
+    db.collection("expenses").onSnapshot(function(snapshot) {
+        state.expenses = [];
+        snapshot.forEach(function(doc) { state.expenses.push({ id: doc.id, ...doc.data() }); });
+        renderAll();
+    }, function(err) { console.error("Expenses error:", err); });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -204,11 +215,11 @@ function initEventListeners() {
     var catalogForm = document.getElementById("catalogForm");
     if (catalogForm) catalogForm.addEventListener("submit", function(e) { e.preventDefault(); addCatalogItem(); });
 
-    var stockForm = document.getElementById("stockForm");
-    if (stockForm) stockForm.addEventListener("submit", function(e) { e.preventDefault(); addStockAndExpense(); });
+    var stockBuyForm = document.getElementById("stockBuyForm");
+    if (stockBuyForm) stockBuyForm.addEventListener("submit", function(e) { e.preventDefault(); addStockBuy(); });
 
-    var quickExpForm = document.getElementById("quickExpenseForm");
-    if (quickExpForm) quickExpForm.addEventListener("submit", function(e) { e.preventDefault(); addQuickExpense(); });
+    var stockUseForm = document.getElementById("stockUseForm");
+    if (stockUseForm) stockUseForm.addEventListener("submit", function(e) { e.preventDefault(); addStockUse(); });
 
     var saleForm = document.getElementById("saleForm");
     if (saleForm) saleForm.addEventListener("submit", function(e) { e.preventDefault(); saveSaleRecord(); });
@@ -224,33 +235,65 @@ function initEventListeners() {
 
     var resetBtn = document.getElementById("resetDataBtn");
     if (resetBtn) resetBtn.addEventListener("click", resetAllData);
+    
+    var stockSearchInput = document.getElementById("stockSearchInput");
+    if (stockSearchInput) stockSearchInput.addEventListener("input", renderStockTable);
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  1. KATALOG
 // ═══════════════════════════════════════════════════════════════
+function toggleCatalogFields() {
+    var type = document.getElementById("catalogType").value;
+    var yarnFields = document.getElementById("yarnFields");
+    var otherFields = document.getElementById("otherFields");
+    if (type === "İplik") {
+        if(yarnFields) yarnFields.style.display = "contents";
+        if(otherFields) otherFields.style.display = "none";
+    } else {
+        if(yarnFields) yarnFields.style.display = "none";
+        if(otherFields) otherFields.style.display = "contents";
+    }
+}
+
 function addCatalogItem() {
-    var category = document.getElementById("catalogCategory").value.trim();
-    var name = document.getElementById("catalogName").value.trim();
-    if (!category || !name) {
-        showToast('warning', 'Eksik Bilgi', 'Kategori ve kalem adı boş bırakılamaz.');
+    var type = document.getElementById("catalogType").value;
+    var brand = document.getElementById("catalogBrand").value.trim();
+    var model = document.getElementById("catalogModel").value.trim();
+    
+    if (!brand || !model) {
+        showToast('warning', 'Eksik Bilgi', 'Marka ve Model adı boş bırakılamaz.');
         return;
     }
-    db.collection("catalog").add({
-        category: category,
-        name: name,
-        unit: (document.getElementById("catalogUnit").value || "").trim()
-    }).then(function() {
-        showToast('success', 'Katalog Güncellendi', '"' + name + '" kataloğa eklendi.');
+    
+    var data = {
+        type: type,
+        category: brand, 
+        name: brand + " " + model,
+        createdAt: new Date().toISOString()
+    };
+    
+    if (type === "İplik") {
+        data.unit = "Top";
+        data.grams = parseFloat(document.getElementById("catalogGrams").value) || 0;
+        data.meters = parseFloat(document.getElementById("catalogMeters").value) || 0;
+    } else {
+        data.unit = (document.getElementById("catalogUnit").value || "").trim();
+    }
+
+    db.collection("catalog").add(data).then(function() {
+        showToast('success', 'Katalog Güncellendi', '"' + data.name + '" kataloğa eklendi.');
         document.getElementById("catalogForm").reset();
+        toggleCatalogFields();
     });
 }
 
 function renderCatalogDropdowns() {
-    var targets = ["stockItemSelect", "quickExpenseItem", "expenseItem"];
-    var html = '<option value="">Seçim Yapın...</option>';
+    var targets = ["stockItemSelect", "stockUseSelect"];
+    var html = '<option value="">Katalogdan seçim yapın...</option>';
     state.catalog.forEach(function(c) {
-        html += '<option value="' + c.id + '">' + c.name + ' (' + c.category + ')</option>';
+        var extra = c.type === "İplik" ? " (İplik)" : " (" + c.type + ")";
+        html += '<option value="' + c.id + '">' + c.name + extra + '</option>';
     });
     targets.forEach(function(id) {
         var el = document.getElementById(id);
@@ -258,76 +301,192 @@ function renderCatalogDropdowns() {
     });
 }
 
+function renderCatalogTable() {
+    var tbody = document.getElementById("catalogTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    if (state.catalog.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">Henüz tanımlı ürün yok.</td></tr>';
+        return;
+    }
+
+    state.catalog.forEach(function(c) {
+        var detailText = "";
+        if (c.type === "İplik") {
+            detailText = (c.grams ? c.grams + "g" : "") + (c.meters ? " / " + c.meters + "m" : "");
+            if (!detailText || detailText === " / ") detailText = "-";
+        } else {
+            detailText = c.unit || "-";
+        }
+
+        var typeBadge = "info";
+        if (c.type === "Kumaş") typeBadge = "warning";
+        if (c.type === "Tutkal") typeBadge = "danger";
+
+        tbody.innerHTML += '<tr>' +
+            '<td><span class="badge ' + typeBadge + '">' + (c.type || "Diğer") + '</span></td>' +
+            '<td style="font-weight:600;">' + c.name + '</td>' +
+            '<td style="color:var(--text-muted); font-size:13px;">' + detailText + '</td>' +
+            '<td><button class="delete-btn" onclick="deleteDocument(\'catalog\', \'' + c.id + '\')">Sil</button></td>' +
+        '</tr>';
+    });
+}
+
 // ═══════════════════════════════════════════════════════════════
-//  2. STOK / GİDER
+//  2. STOK YÖNETİMİ (ALIM VE KULLANIM)
 // ═══════════════════════════════════════════════════════════════
-function addStockAndExpense() {
+function toggleStockBuyFields() {
+    var selectVal = document.getElementById("stockItemSelect").value;
+    var catalogItem = state.catalog.find(function(c) { return c.id === selectVal; });
+    var yarnFields = document.getElementById("stockBuyYarnFields");
+    var fabricFields = document.getElementById("stockBuyFabricFields");
+    
+    if (catalogItem && catalogItem.type === "İplik") {
+        if(yarnFields) yarnFields.style.display = "contents";
+        if(fabricFields) fabricFields.style.display = "none";
+    } else if (catalogItem && catalogItem.type === "Kumaş") {
+        if(yarnFields) yarnFields.style.display = "none";
+        if(fabricFields) fabricFields.style.display = "contents";
+    } else {
+        if(yarnFields) yarnFields.style.display = "none";
+        if(fabricFields) fabricFields.style.display = "none";
+    }
+}
+
+function addStockBuy() {
     var selectVal = document.getElementById("stockItemSelect").value;
     var catalogItem = state.catalog.find(function(c) { return c.id === selectVal; });
     if (!catalogItem) { showToast('warning', 'Seçim Hatası', 'Lütfen katalogdan bir kalem seçin!'); return; }
+    
     var cost = parseFloat(document.getElementById("stockTotalCost").value);
-    if (isNaN(cost) || cost <= 0) { showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.'); return; }
+    var qty = parseFloat(document.getElementById("stockQty").value);
+    
+    if (isNaN(cost) || cost < 0) { showToast('warning', 'Geçersiz Tutar', 'Tutar 0 veya daha büyük olmalıdır.'); return; }
+    if (isNaN(qty) || qty <= 0) { showToast('warning', 'Geçersiz Miktar', 'Miktar sıfırdan büyük olmalıdır.'); return; }
 
-    db.collection("stocks").add({
+    var unit = catalogItem.unit;
+    if (catalogItem.type === "Kumaş") unit = "Adet";
+
+    var data = {
         catalogId: catalogItem.id,
-        category: catalogItem.category,
-        name: catalogItem.name,
-        qty: parseFloat(document.getElementById("stockQty").value) || 0,
-        unit: catalogItem.unit,
-        threshold: parseFloat(document.getElementById("stockThreshold").value) || 0,
+        category: catalogItem.category, 
+        name: catalogItem.name,         
+        type: catalogItem.type || 'Diğer',
+        qty: qty,                       
+        unit: unit,
         cost: cost,
         payer: document.getElementById("stockPayer").value,
-        date: document.getElementById("stockDate").value
-    }).then(function() {
-        showToast('success', 'Stok Eklendi', '"' + catalogItem.name + '" stoğa ve gidere işlendi.');
-        document.getElementById("stockForm").reset();
-        setDefaultDates();
-    });
+        date: document.getElementById("stockDate").value,
+        isPurchase: true
+    };
+
+    if (catalogItem.type === "İplik") {
+        data.colorName = document.getElementById("stockColorName").value.trim();
+        data.colorCode = document.getElementById("stockColorCode").value.trim();
+        if(!data.colorName && !data.colorCode) {
+            showToast('warning', 'Eksik Bilgi', 'İplik alımlarında en azından bir renk kodu veya adı girilmelidir.'); return;
+        }
+    } else if (catalogItem.type === "Kumaş") {
+        data.fabricW = parseFloat(document.getElementById("stockFabricW").value) || 0;
+        data.fabricH = parseFloat(document.getElementById("stockFabricH").value) || 0;
+        if(data.fabricW <= 0 || data.fabricH <= 0) {
+            showToast('warning', 'Eksik Bilgi', 'Kumaş için En ve Boy ölçüleri sıfırdan büyük olmalıdır.'); return;
+        }
+    }
+
+    var editingId = document.getElementById("editingStockBuyId").value;
+
+    if (editingId) {
+        db.collection("stocks").doc(editingId).update(data).then(function() {
+            showToast('success', 'Güncellendi', 'Stok alım kaydı güncellendi.');
+            cancelEditStock('buy');
+        });
+    } else {
+        db.collection("stocks").add(data).then(function() {
+            showToast('success', 'Stok Kaydedildi', qty + ' ' + unit + ' stoklara girdi.');
+            document.getElementById("stockBuyForm").reset();
+            toggleStockBuyFields();
+            setDefaultDates();
+        });
+    }
 }
 
-function addQuickExpense() {
-    var selectVal = document.getElementById("quickExpenseItem").value;
-    var catalogItem = state.catalog.find(function(c) { return c.id === selectVal; });
-    if (!catalogItem) { showToast('warning', 'Seçim Hatası', 'Lütfen katalogdan bir kalem seçin!'); return; }
-    var amount = parseFloat(document.getElementById("quickExpenseAmount").value);
-    if (isNaN(amount) || amount <= 0) { showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.'); return; }
+function addStockUse() {
+    var selectVal = document.getElementById("stockUseSelect").value;
+    if (!selectVal) { showToast('warning', 'Seçim Hatası', 'Kullanılacak stoku seçin!'); return; }
+    
+    var qty = parseFloat(document.getElementById("stockUseQty").value);
+    if (isNaN(qty) || qty <= 0) { showToast('warning', 'Geçersiz Miktar', 'Miktar sıfırdan büyük olmalıdır.'); return; }
 
-    db.collection("stocks").add({
-        catalogId: catalogItem.id,
+    var parts = selectVal.split("|||");
+    var catalogId = parts[0];
+    var colorName = parts[1] || "";
+    var colorCode = parts[2] || "";
+    var fabricW = parseFloat(parts[3]) || 0;
+    var fabricH = parseFloat(parts[4]) || 0;
+
+    var catalogItem = state.catalog.find(function(c) { return c.id === catalogId; });
+    if(!catalogItem) return;
+
+    var unit = catalogItem.unit;
+    if (catalogItem.type === "Kumaş") unit = "Adet";
+
+    var data = {
+        catalogId: catalogId,
         category: catalogItem.category,
         name: catalogItem.name,
-        qty: 0, unit: catalogItem.unit, threshold: 0,
-        cost: amount,
-        payer: document.getElementById("quickExpensePayer").value,
-        date: document.getElementById("quickExpenseDate").value
-    }).then(function() {
-        showToast('success', 'Gider İşlendi', formatCurrency(amount) + ' gider olarak kaydedildi.');
-        document.getElementById("quickExpenseForm").reset();
-        setDefaultDates();
-    });
+        type: catalogItem.type || 'Diğer',
+        qty: -qty, 
+        unit: unit,
+        cost: 0, 
+        date: document.getElementById("stockUseDate").value,
+        isUsage: true
+    };
+
+    if (catalogItem.type === "İplik") {
+        data.colorName = colorName;
+        data.colorCode = colorCode;
+    } else if (catalogItem.type === "Kumaş") {
+        data.fabricW = fabricW;
+        data.fabricH = fabricH;
+    }
+
+    var editingId = document.getElementById("editingStockUseId").value;
+
+    if (editingId) {
+        db.collection("stocks").doc(editingId).update(data).then(function() {
+            showToast('info', 'Güncellendi', 'Stok kullanım kaydı güncellendi.');
+            cancelEditStock('use');
+        });
+    } else {
+        db.collection("stocks").add(data).then(function() {
+            showToast('info', 'Stok Kullanıldı', qty + ' birim stoktan düşüldü.');
+            document.getElementById("stockUseForm").reset();
+            setDefaultDates();
+        });
+    }
 }
 
-// Giderler sekmesinden gider ekleme
+// ═══════════════════════════════════════════════════════════════
+//  3. BAĞIMSIZ GİDERLER
+// ═══════════════════════════════════════════════════════════════
 function addExpense() {
-    var selectVal = document.getElementById("expenseItem").value;
-    var catalogItem = state.catalog.find(function(c) { return c.id === selectVal; });
-    if (!catalogItem) { showToast('warning', 'Seçim Hatası', 'Lütfen katalogdan bir kalem seçin!'); return; }
+    var category = document.getElementById("expenseCategory").value;
+    var desc = document.getElementById("expenseDesc").value.trim();
+    if (!category || !desc) { showToast('warning', 'Eksik Bilgi', 'Kategori ve açıklama zorunludur.'); return; }
+    
     var amount = parseFloat(document.getElementById("expenseAmount").value);
     if (isNaN(amount) || amount <= 0) { showToast('warning', 'Geçersiz Tutar', 'Tutar sıfırdan büyük olmalıdır.'); return; }
 
-    db.collection("stocks").add({
-        catalogId: catalogItem.id,
-        category: catalogItem.category,
-        name: catalogItem.name,
-        qty: parseFloat(document.getElementById("expenseQty").value) || 0,
-        unit: catalogItem.unit,
-        threshold: 0,
-        cost: amount,
+    db.collection("expenses").add({
+        category: category,
+        description: desc,
+        amount: amount,
         payer: document.getElementById("expensePayer").value,
-        date: document.getElementById("expenseDate").value,
-        note: (document.getElementById("expenseNote").value || "").trim()
+        date: document.getElementById("expenseDate").value
     }).then(function() {
-        showToast('success', 'Gider Kaydedildi', '"' + catalogItem.name + '" - ' + formatCurrency(amount));
+        showToast('success', 'Gider Kaydedildi', formatCurrency(amount) + ' tutarında gider işlendi.');
         document.getElementById("expenseForm").reset();
         setDefaultDates();
     });
@@ -335,44 +494,215 @@ function addExpense() {
 
 function renderStockTable() {
     var tbody = document.getElementById("stockTableBody");
-    if (!tbody) return;
-    tbody.innerHTML = "";
+    var alertBody = document.getElementById("dashStockAlerts");
+    var useSelect = document.getElementById("stockUseSelect");
+    
+    if (!tbody || !alertBody || !useSelect) return;
 
+    tbody.innerHTML = "";
+    alertBody.innerHTML = "";
+    useSelect.innerHTML = '<option value="">Stoktan düşülecek ürünü seçin...</option>';
+    
     var stockSummary = {};
+    
     state.stocks.forEach(function(s) {
-        if (!stockSummary[s.name]) {
-            stockSummary[s.name] = { category: s.category, name: s.name, unit: s.unit, totalQty: s.qty || 0, threshold: s.threshold || 0 };
+        if (s.qty === undefined || isNaN(s.qty)) return;
+
+        var key = s.catalogId;
+        if (s.type === 'İplik') {
+            key += "|||" + (s.colorName || "") + "|||" + (s.colorCode || "") + "|||0|||0";
+        } else if (s.type === 'Kumaş') {
+            key += "|||||||||" + (s.fabricW || 0) + "|||" + (s.fabricH || 0);
         } else {
-            stockSummary[s.name].totalQty += (s.qty || 0);
-            if ((s.threshold || 0) > stockSummary[s.name].threshold) {
-                stockSummary[s.name].threshold = s.threshold;
+            key += "|||||||||0|||0"; 
+        }
+
+        if (!stockSummary[key]) {
+            stockSummary[key] = {
+                catalogId: s.catalogId,
+                type: s.type || 'Diğer',
+                brand: s.category || '',
+                model: s.name || '',
+                colorName: s.colorName || '',
+                colorCode: s.colorCode || '',
+                fabricW: s.fabricW || 0,
+                fabricH: s.fabricH || 0,
+                totalQty: 0,
+                unit: s.unit || (s.type === 'Kumaş' ? 'Adet' : 'Birim')
+            };
+        }
+        stockSummary[key].totalQty += s.qty;
+    });
+
+    var searchInput = document.getElementById("stockSearchInput");
+    var searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+    var useSelectHtml = '<option value="">Stoktan düşülecek ürünü seçin...</option>';
+    var alertHtml = "";
+    var tableHtml = "";
+
+    Object.keys(stockSummary).forEach(function(key) {
+        var item = stockSummary[key];
+        
+        var displayName = item.model;
+        var displayColor = "";
+        
+        if (item.brand && displayName.indexOf(item.brand) === -1) {
+             displayName = item.brand + " " + displayName;
+        }
+
+        if (item.type === 'İplik') {
+            var colStrs = [];
+            if(item.colorName) colStrs.push(item.colorName);
+            if(item.colorCode) colStrs.push("(#" + item.colorCode + ")");
+            displayColor = colStrs.join(" ");
+            displayName += " " + displayColor;
+        } else if (item.type === 'Kumaş') {
+            if (item.fabricW && item.fabricH) {
+                displayColor = item.fabricW + "x" + item.fabricH + " cm";
+                displayName += " (" + displayColor + ")";
             }
+        }
+
+        if (item.totalQty > 0) {
+            useSelectHtml += '<option value="' + key + '">' + displayName + ' (Mevcut: ' + item.totalQty.toFixed(1) + ' ' + item.unit + ')</option>';
+        }
+
+        if (searchTerm) {
+            var searchStr = (item.model + " " + item.colorName + " " + item.colorCode + " " + item.fabricW + " " + item.fabricH).toLowerCase();
+            if (searchStr.indexOf(searchTerm) === -1) return;
+        }
+
+        var isCritical = item.totalQty <= 2;
+        var statusBadge = isCritical ? '<span class="badge danger">Kritik</span>' : '<span class="badge success">Yeterli</span>';
+        
+        tableHtml += '<tr>' +
+            '<td><strong style="color:var(--accent-blue)">' + (item.brand ? item.brand + ' ' : '') + '</strong>' + item.model.replace(item.brand+" ", "") + '</td>' +
+            '<td>' + (displayColor || '-') + '</td>' +
+            '<td style="font-weight:bold; font-size:16px;">' + item.totalQty.toFixed(1) + ' <span style="font-size:12px; font-weight:normal; color:var(--text-muted);">' + item.unit + '</span></td>' +
+            '<td>' + statusBadge + '</td>' +
+        '</tr>';
+
+        if (isCritical && item.totalQty >= 0) {
+            alertHtml += '<tr><td>' + displayName + '</td><td style="color:var(--danger-red); font-weight:bold;">' + item.totalQty.toFixed(1) + '</td><td>2</td><td>' + statusBadge + '</td></tr>';
         }
     });
 
-    var items = Object.values(stockSummary).filter(function(s) { return s.totalQty > 0 || s.threshold > 0; });
+    if (tableHtml === "") tableHtml = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">Envanterde kayıt bulunamadı.</td></tr>';
+    if (alertHtml === "") alertHtml = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted);">Kritik seviyede ürün yok.</td></tr>';
 
-    if (items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">📦 Henüz stok kaydı yok.</td></tr>';
+    tbody.innerHTML = tableHtml;
+    alertBody.innerHTML = alertHtml;
+    useSelect.innerHTML = useSelectHtml;
+}
+
+function renderStockHistoryTable() {
+    var tbody = document.getElementById("stockHistoryTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    var history = state.stocks.filter(function(s) {
+        return s.isPurchase || s.isUsage || (s.qty !== undefined && s.qty !== 0);
+    });
+
+    history.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
+
+    if (history.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Henüz stok hareketi yok.</td></tr>';
         return;
     }
 
-    items.forEach(function(s) {
-        var isCritical = s.threshold > 0 && s.totalQty <= s.threshold;
-        var unitText = s.unit ? ' ' + s.unit : '';
-        tbody.innerHTML +=
-            '<tr>' +
-                '<td>' + s.category + '</td>' +
-                '<td style="font-weight:600;">' + s.name + '</td>' +
-                '<td style="font-weight:700; color:' + (isCritical ? 'var(--danger-red)' : 'var(--text-main)') + '">' + s.totalQty + unitText + '</td>' +
-                '<td>' + s.threshold + unitText + '</td>' +
-                '<td><span class="badge ' + (isCritical ? 'danger' : 'success') + '">' + (isCritical ? 'Kritik' : 'Normal') + '</span></td>' +
-            '</tr>';
+    history.forEach(function(s) {
+        var actionText = "";
+        var actionClass = "";
+        if (s.isPurchase || s.qty > 0) { actionText = "Alım (+)"; actionClass = "success"; }
+        else if (s.isUsage || s.qty < 0) { actionText = "Kullanım (-)"; actionClass = "danger"; }
+        else { actionText = "Kayıt"; actionClass = "info"; }
+
+        var detailText = s.name;
+        if (s.type === "İplik") {
+            if(s.colorName) detailText += " " + s.colorName;
+            if(s.colorCode) detailText += " (#" + s.colorCode + ")";
+        } else if (s.type === "Kumaş") {
+            if(s.fabricW && s.fabricH) detailText += " (" + s.fabricW + "x" + s.fabricH + " cm)";
+        }
+
+        var costText = (s.cost !== undefined && s.cost >= 0) ? formatCurrency(s.cost) : "-";
+
+        tbody.innerHTML += '<tr>' +
+            '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td>' +
+            '<td><span class="badge ' + actionClass + '">' + actionText + '</span></td>' +
+            '<td style="font-weight:600;">' + detailText + '</td>' +
+            '<td style="font-weight:bold;">' + Math.abs(s.qty) + ' ' + (s.unit || '') + '</td>' +
+            '<td>' + costText + '</td>' +
+            '<td>' +
+                '<button class="action-btn" style="margin-right:5px; background:var(--accent-blue); color:white;" onclick="editStock(\'' + s.id + '\')">✏️</button>' +
+                '<button class="action-btn" style="background:var(--danger-red); color:white;" onclick="deleteDocument(\'stocks\', \'' + s.id + '\')">🗑️</button>' +
+            '</td>' +
+        '</tr>';
     });
 }
 
+function editStock(id) {
+    var stock = state.stocks.find(function(s) { return s.id === id; });
+    if (!stock) return;
+
+    if (stock.isPurchase || stock.qty > 0) {
+        document.getElementById("editingStockBuyId").value = stock.id;
+        document.getElementById("stockItemSelect").value = stock.catalogId || "";
+        toggleStockBuyFields();
+        
+        if (stock.type === "İplik") {
+            document.getElementById("stockColorName").value = stock.colorName || "";
+            document.getElementById("stockColorCode").value = stock.colorCode || "";
+        } else if (stock.type === "Kumaş") {
+            document.getElementById("stockFabricW").value = stock.fabricW || "";
+            document.getElementById("stockFabricH").value = stock.fabricH || "";
+        }
+
+        document.getElementById("stockDate").value = stock.date || getTodayForInput();
+        document.getElementById("stockQty").value = Math.abs(stock.qty);
+        document.getElementById("stockTotalCost").value = stock.cost || 0;
+        if(stock.payer) document.getElementById("stockPayer").value = stock.payer;
+
+        document.getElementById("cancelStockBuyBtn").style.display = "inline-block";
+        document.getElementById("stockBuyForm").scrollIntoView({behavior: "smooth"});
+        showToast("info", "Düzenleme Modu", "Alım kaydını düzenliyorsunuz.");
+
+    } else if (stock.isUsage || stock.qty < 0) {
+        document.getElementById("editingStockUseId").value = stock.id;
+        
+        var selectKey = stock.catalogId;
+        if (stock.type === 'İplik') selectKey += "|||" + (stock.colorName||"") + "|||" + (stock.colorCode||"") + "|||0|||0";
+        else if (stock.type === 'Kumaş') selectKey += "|||||||||" + (stock.fabricW||0) + "|||" + (stock.fabricH||0);
+        else selectKey += "|||||||||0|||0";
+        
+        document.getElementById("stockUseSelect").value = selectKey;
+        document.getElementById("stockUseDate").value = stock.date || getTodayForInput();
+        document.getElementById("stockUseQty").value = Math.abs(stock.qty);
+        
+        document.getElementById("cancelStockUseBtn").style.display = "inline-block";
+        document.getElementById("stockUseForm").scrollIntoView({behavior: "smooth"});
+        showToast("info", "Düzenleme Modu", "Kullanım kaydını düzenliyorsunuz.");
+    }
+}
+
+function cancelEditStock(type) {
+    if (type === 'buy') {
+        document.getElementById("editingStockBuyId").value = "";
+        document.getElementById("cancelStockBuyBtn").style.display = "none";
+        document.getElementById("stockBuyForm").reset();
+        toggleStockBuyFields();
+    } else if (type === 'use') {
+        document.getElementById("editingStockUseId").value = "";
+        document.getElementById("cancelStockUseBtn").style.display = "none";
+        document.getElementById("stockUseForm").reset();
+    }
+    setDefaultDates();
+}
+
 // ═══════════════════════════════════════════════════════════════
-//  GİDERLER SEKMESİ
+//  GİDERLER SEKMESİ (YENİ SİSTEM)
 // ═══════════════════════════════════════════════════════════════
 function setExpenseFilter(mode, btn) {
     expenseFilterMode = mode;
@@ -391,44 +721,80 @@ function renderExpenseTable() {
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    var expenses = state.stocks.filter(function(s) { return s.cost && s.cost > 0; });
+    var filteredList = [];
+    
+    // Eski sistem giderleri (Geriye Dönük Uyumluluk için stoklardaki cost'u olan kayıtlar)
+    state.stocks.forEach(function(s) {
+        if (s.cost > 0 && s.qty === 0) {
+            filteredList.push({
+                id: s.id + "_old",
+                date: s.date,
+                category: s.category || 'Eski Kayıt',
+                description: s.note || s.name || 'Açıklama Yok',
+                amount: s.cost,
+                payer: s.payer,
+                isOld: true,
+                rawDocId: s.id
+            });
+        }
+    });
+
+    // Yeni sistem bağımsız giderler
+    state.expenses.forEach(function(e) {
+        filteredList.push({
+            id: e.id,
+            date: e.date,
+            category: e.category,
+            description: e.description,
+            amount: e.amount,
+            payer: e.payer,
+            isOld: false,
+            rawDocId: e.id
+        });
+    });
 
     // Filtre uygula
     var now = new Date();
     var startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     if (expenseFilterMode === 'month') {
-        expenses = expenses.filter(function(s) { return new Date(s.date) >= startOfMonth; });
+        filteredList = filteredList.filter(function(s) { return new Date(s.date) >= startOfMonth; });
     } else if (expenseFilterMode === 'semih') {
-        expenses = expenses.filter(function(s) { return s.payer === 'Semih'; });
+        filteredList = filteredList.filter(function(s) { return s.payer === 'Semih'; });
     } else if (expenseFilterMode === 'ekrem') {
-        expenses = expenses.filter(function(s) { return s.payer === 'Ekrem'; });
+        filteredList = filteredList.filter(function(s) { return s.payer === 'Ekrem'; });
     } else if (expenseFilterMode === 'custom') {
         var startVal = document.getElementById("expFilterStart") ? document.getElementById("expFilterStart").value : '';
         var endVal = document.getElementById("expFilterEnd") ? document.getElementById("expFilterEnd").value : '';
-        if (startVal) expenses = expenses.filter(function(s) { return s.date >= startVal; });
-        if (endVal) expenses = expenses.filter(function(s) { return s.date <= endVal; });
+        if (startVal) filteredList = filteredList.filter(function(s) { return s.date >= startVal; });
+        if (endVal) filteredList = filteredList.filter(function(s) { return s.date <= endVal; });
     }
 
     // Tarih sıralaması (en yeni üstte)
-    expenses.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
+    filteredList.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
 
-    if (expenses.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">📝 Gösterilecek gider kaydı yok.</td></tr>';
+    if (filteredList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">📝 Gösterilecek gider kaydı yok.</td></tr>';
         return;
     }
 
-    expenses.forEach(function(s) {
-        var unitText = s.unit ? ' ' + s.unit : '';
+    filteredList.forEach(function(e) {
+        var payerIcon = "";
+        if (e.payer === "Semih") { payerIcon = "🟦 Semih"; }
+        else if (e.payer === "Ekrem") { payerIcon = "🟪 Ekrem"; }
+        else if (e.payer === "Atölye Kasası") { payerIcon = "🏦 Atölye Kasası"; }
+        else { payerIcon = e.payer; }
+
+        var deleteCmd = e.isOld ? 'deleteDocument(\'stocks\', \'' + e.rawDocId + '\')' : 'deleteDocument(\'expenses\', \'' + e.rawDocId + '\')';
+
         tbody.innerHTML +=
             '<tr>' +
-                '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td>' +
-                '<td style="font-weight:600;">' + s.name + '</td>' +
-                '<td>' + s.category + '</td>' +
-                '<td>' + (s.qty > 0 ? s.qty + unitText : '-') + '</td>' +
-                '<td style="font-weight:700; color:var(--danger-red);">' + formatCurrency(s.cost) + '</td>' +
-                '<td><span class="badge ' + (s.payer === 'Semih' ? 'info' : 'warning') + '">' + s.payer + '</span></td>' +
-                '<td><button class="delete-btn" onclick="deleteDocument(\'stocks\', \'' + s.id + '\')">Sil</button></td>' +
+                '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(e.date) + '</td>' +
+                '<td><span class="badge info">' + e.category + '</span></td>' +
+                '<td>' + e.description + '</td>' +
+                '<td style="font-weight:700; color:var(--danger-red);">' + formatCurrency(e.amount) + '</td>' +
+                '<td>' + payerIcon + '</td>' +
+                '<td><button class="delete-btn" onclick="' + deleteCmd + '">Sil</button></td>' +
             '</tr>';
     });
 
@@ -816,11 +1182,21 @@ function calculateFinancials() {
     var atolyeKasasi = 0;
 
     state.stocks.forEach(function(s) {
-        if (s.cost) {
-            totalExpenses += s.cost;
+        if (s.cost && s.cost > 0) {
+            totalExpenses += s.cost; // Stok alım maliyeti
             if (s.payer === "Semih") { semihHarcama += s.cost; }
             if (s.payer === "Ekrem") { ekremHarcama += s.cost; }
-            if (s.payer === "Atölye Kasası") { atolyeKasasi -= s.cost; } // Kasadan çıkan para
+            if (s.payer === "Atölye Kasası") { atolyeKasasi -= s.cost; } 
+        }
+    });
+    
+    // YENİ BAĞIMSIZ GİDERLER
+    state.expenses.forEach(function(e) {
+        if (e.amount && e.amount > 0) {
+            totalExpenses += e.amount;
+            if (e.payer === "Semih") { semihHarcama += e.amount; }
+            if (e.payer === "Ekrem") { ekremHarcama += e.amount; }
+            if (e.payer === "Atölye Kasası") { atolyeKasasi -= e.amount; }
         }
     });
 
@@ -947,7 +1323,10 @@ function renderAll() {
 
     // Tablolar ve Listeler
     populateCustomerDatalist();
+    renderCatalogDropdowns();
+    renderCatalogTable();
     renderStockTable();
+    renderStockHistoryTable();
     renderExpenseTable();
     renderSalesTable();
     renderPartnerTable();

@@ -113,24 +113,7 @@
                             <tbody id="dashStockAlerts"></tbody>
                         </table>
                     </div>
-                    <form class="panel-box" id="quickExpenseForm" style="border:1px solid rgba(52,211,153,0.2);">
-                        <h3>⚡ Hızlı Gider İşle</h3>
-                        <label>Gider Kalemi
-                            <select id="quickExpenseItem" required><option value="">Önce stoktan kalem tanımlayın</option></select>
-                        </label>
-                        <div class="form-grid">
-                            <label>İşlem Tarihi <input type="date" id="quickExpenseDate" required></label>
-                            <label>Tutar (TL) <input type="number" id="quickExpenseAmount" step="0.01" min="0.01" required></label>
-                        </div>
-                        <label>Kim Ödedi?
-                            <select id="quickExpensePayer" required>
-                                <option value="Atölye Kasası">Ortak Atölye Kasası</option>
-                                <option value="Semih">Semih (Cebinden)</option>
-                                <option value="Ekrem">Ekrem (Cebinden)</option>
-                            </select>
-                        </label>
-                        <button type="submit" class="primary-button">Hızlı İşle</button>
-                    </form>
+                    <!-- Hızlı Gider kaldırıldı (V5 Güncellemesi) -->
                 </div>
 
                 <div class="panel-box" style="margin-top:5px; border-left:3px solid var(--accent-yellow);">
@@ -207,54 +190,119 @@
                     <h1>Ürün Kataloğu & Stok Yönetimi</h1>
                 </div>
 
-                <div class="panel-box" style="margin-bottom:25px; border-left:3px solid var(--accent-blue);">
-                    <h3>📖 1. Adım: Yeni Gider / Ürün Kalemi Tanımla (Katalog)</h3>
-                    <form id="catalogForm" class="form-grid" style="align-items:end;">
-                        <label>Kategori
-                            <input type="text" id="catalogCategory" list="catDatalist" placeholder="Örn: İp, Reklam, Sabit Gider..." required>
-                            <datalist id="catDatalist">
-                                <option value="İp"></option>
-                                <option value="Kumaş"></option>
-                                <option value="Reklam & Pazarlama"></option>
-                                <option value="Sabit Gider"></option>
-                                <option value="Kargo"></option>
-                                <option value="Diğer"></option>
-                            </datalist>
-                        </label>
-                        <label>Kalem Adı <input type="text" id="catalogName" placeholder="Örn: Instagram Reklamı, Zümrüt İp" required></label>
-                        <label>Birim (İsteğe Bağlı) <input type="text" id="catalogUnit" placeholder="Boş bırakabilirsiniz"></label>
-                        <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--accent-blue), #4b96f7);">Kataloğa Ekle</button>
-                    </form>
+                <div class="grid-1-2" style="margin-bottom:25px;">
+                    <div class="panel-box" style="border-left:3px solid var(--accent-blue);">
+                        <h3>📖 1. Adım: Ürün / İplik Tanımlama</h3>
+                        <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px;">Kataloğa eklediğiniz ürünleri daha sonra stok alımlarında seçebilirsiniz.</p>
+                        <form id="catalogForm" class="form-grid" style="align-items:end;">
+                            <label>Ürün Tipi
+                                <select id="catalogType" onchange="toggleCatalogFields()" required>
+                                    <option value="İplik">🧶 İplik</option>
+                                    <option value="Kumaş">🪡 Kumaş</option>
+                                    <option value="Tutkal">🧴 Tutkal</option>
+                                    <option value="Diğer">📦 Diğer Üretim Malzemesi</option>
+                                </select>
+                            </label>
+                            <label>Marka / Kategori <input type="text" id="catalogBrand" placeholder="Örn: Nako, Kumaşçı" required></label>
+                            <label>Seri / Model Adı <input type="text" id="catalogModel" placeholder="Örn: Vega, Tufting Kumaşı" required></label>
+                            
+                            <div id="yarnFields" style="display:contents;">
+                                <label>1 Top Gramajı (g) <input type="number" id="catalogGrams" placeholder="100"></label>
+                                <label>1 Top Metrajı (m) <input type="number" id="catalogMeters" placeholder="200"></label>
+                            </div>
+                            <div id="otherFields" style="display:none; grid-column: span 2;">
+                                <label>Birim <input type="text" id="catalogUnit" placeholder="Örn: m², Litre, Adet"></label>
+                            </div>
+                            <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--accent-blue), #4b96f7);">Kataloğa Ekle</button>
+                        </form>
+                    </div>
+                    
+                    <div class="panel-box" style="overflow-y:auto; max-height: 400px;">
+                        <h3>📋 Tanımlı Ürünler (Katalog Listesi)</h3>
+                        <table class="data-table">
+                            <thead><tr><th>Tipi</th><th>Marka & Model</th><th>Detay</th><th>İşlem</th></tr></thead>
+                            <tbody id="catalogTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="grid-1-2">
-                    <form class="panel-box" id="stockForm">
-                        <h3>🛒 2. Adım: Stok Girişi</h3>
-                        <label>Katalogdan Seç
-                            <select id="stockItemSelect" required><option value="">Önce yukarıdan kalem tanımlayın</option></select>
-                        </label>
-                        <div class="form-grid">
-                            <label>İşlem Tarihi <input type="date" id="stockDate" required></label>
-                            <label>Alınan Miktar <input type="number" id="stockQty" step="0.01" min="0" required></label>
-                            <label>Kritik Eşik <input type="number" id="stockThreshold" step="0.01" value="0" min="0"></label>
-                        </div>
-                        <label>Toplam Alım Tutarı (TL) <input type="number" id="stockTotalCost" step="0.01" min="0.01" required></label>
-                        <label>Ödemeyi Kim Yaptı?
-                            <select id="stockPayer" required>
-                                <option value="Atölye Kasası">Ortak Atölye Kasası</option>
-                                <option value="Semih">Semih (Cebinden Ödedi)</option>
-                                <option value="Ekrem">Ekrem (Cebinden Ödedi)</option>
-                            </select>
-                        </label>
-                        <button type="submit" class="primary-button">Stoğa Ekle ve Gideri Yaz</button>
-                    </form>
+                    <div>
+                        <!-- Satın Alım -->
+                        <form class="panel-box" id="stockBuyForm" style="margin-bottom: 20px;">
+                            <h3>📥 2. Adım: Stok Satın Al (Depoya Gir)</h3>
+                            <label>Katalogdan Ürün Seç
+                                <select id="stockItemSelect" onchange="toggleStockBuyFields()" required><option value="">Önce ürün tanımlayın</option></select>
+                            </label>
+                            
+                            <div id="stockBuyYarnFields" class="form-grid" style="display:none; margin-top:10px; padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border-left:2px solid var(--accent-blue);">
+                                <label>Renk Adı <input type="text" id="stockColorName" placeholder="Örn: Açık Mavi"></label>
+                                <label>Renk Kodu <input type="text" id="stockColorCode" placeholder="Örn: 10543"></label>
+                            </div>
+                            
+                            <div id="stockBuyFabricFields" class="form-grid" style="display:none; margin-top:10px; padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border-left:2px solid var(--accent-purple);">
+                                <label>Kumaş Eni (cm) <input type="number" id="stockFabricW" placeholder="Örn: 150" min="1"></label>
+                                <label>Kumaş Boyu (cm) <input type="number" id="stockFabricH" placeholder="Örn: 120" min="1"></label>
+                            </div>
+
+                            <div class="form-grid" style="margin-top:10px;">
+                                <label>İşlem Tarihi <input type="date" id="stockDate" required></label>
+                                <label>Alınan Miktar / Top / Parça <input type="number" id="stockQty" step="0.01" min="0.01" required></label>
+                            </div>
+                            <label>Toplam Alım Maliyeti (TL) <input type="number" id="stockTotalCost" step="0.01" min="0" required></label>
+                            <label>Ödemeyi Kim / Nereden Yaptı?
+                                <select id="stockPayer" required>
+                                    <option value="Atölye Kasası">Ortak Atölye Kasası</option>
+                                    <option value="Semih">Semih (Kendi Cebinden)</option>
+                                    <option value="Ekrem">Ekrem (Kendi Cebinden)</option>
+                                </select>
+                            </label>
+                            <input type="hidden" id="editingStockBuyId">
+                            <div style="display:flex; gap:10px;">
+                                <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--accent-green), #2bc48a);">Stoğa Ekle & Kaydet</button>
+                                <button type="button" id="cancelStockBuyBtn" class="primary-button" style="display:none; background:var(--bg-panel-hover); color:var(--text-main);" onclick="cancelEditStock('buy')">İptal</button>
+                            </div>
+                        </form>
+
+                        <!-- Kullanım (Düşme) -->
+                        <form class="panel-box" id="stockUseForm" style="border: 1px dashed rgba(248,113,113,0.3);">
+                            <h3>📤 Üretimde Stok Kullan (Stoktan Düş)</h3>
+                            <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Kullanımlarda para çıkışı olmaz, sadece mevcut envanterden miktar eksilir.</p>
+                            <label>Mevcut Stoklardan Seç
+                                <select id="stockUseSelect" required><option value="">Envanterde ürün yok</option></select>
+                            </label>
+                            <div class="form-grid">
+                                <label>Kullanım Tarihi <input type="date" id="stockUseDate" required></label>
+                                <label>Kullanılan Miktar <input type="number" id="stockUseQty" step="0.01" min="0.01" required></label>
+                            </div>
+                            <input type="hidden" id="editingStockUseId">
+                            <div style="display:flex; gap:10px;">
+                                <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--bg-panel-hover), var(--bg-panel)); color:var(--danger-red); border:1px solid var(--danger-red);">Stoktan Düş</button>
+                                <button type="button" id="cancelStockUseBtn" class="primary-button" style="display:none; background:var(--bg-panel-hover); color:var(--text-main);" onclick="cancelEditStock('use')">İptal</button>
+                            </div>
+                        </form>
+                    </div>
+
                     <div class="panel-box">
-                        <h3>Güncel Stok Durumu</h3>
+                        <h3>📦 Canlı Envanter (Renk Kodlu Stoklar)</h3>
+                        <div class="search-bar" style="margin-bottom: 10px;">
+                            <input type="text" id="stockSearchInput" placeholder="Marka, model veya renk kodu ara..." oninput="renderStockTable()">
+                        </div>
                         <table class="data-table">
-                            <thead><tr><th>Kategori</th><th>Malzeme</th><th>Stok</th><th>Eşik</th><th>Durum</th></tr></thead>
+                            <thead><tr><th>Marka / Model</th><th>Renk / Kod</th><th>Stok</th><th>Durum</th></tr></thead>
                             <tbody id="stockTableBody"></tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- Son Stok Hareketleri (Geçmiş) -->
+                <div class="panel-box" style="margin-top:25px; overflow-x:auto;">
+                    <h3>🕒 Son Stok Hareketleri (Geçmiş)</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Envanteri düzeltmek için yanlış girdiğiniz alım/kullanım hareketini buradan düzenleyebilir veya silebilirsiniz.</p>
+                    <table class="data-table">
+                        <thead><tr><th>Tarih</th><th>İşlem Tipi</th><th>Ürün / Detay</th><th>Miktar</th><th>Maliyet</th><th>Aksiyon</th></tr></thead>
+                        <tbody id="stockHistoryTableBody"></tbody>
+                    </table>
                 </div>
             </section>
 
@@ -285,13 +333,26 @@
 
                 <div class="grid-1-2">
                     <form class="panel-box" id="expenseForm">
-                        <h3>💸 Yeni Gider Kaydı</h3>
-                        <label>Gider Kalemi
-                            <select id="expenseItem" required><option value="">Önce Stok sekmesinden kalem tanımlayın</option></select>
+                        <h3>💸 Yeni Bağımsız Gider Kaydı</h3>
+                        <p style="font-size:12px; color:var(--text-muted); margin-bottom:15px;">Fatura, kira, yemek gibi malzeme dışı harcamalarınızı buradan girin.</p>
+                        
+                        <label>Gider Kategorisi
+                            <select id="expenseCategory" required>
+                                <option value="">Kategori Seçin...</option>
+                                <option value="Fatura (Elektrik/Su vb.)">Fatura (Elektrik/Su vb.)</option>
+                                <option value="Kira">Kira</option>
+                                <option value="Kargo">Kargo</option>
+                                <option value="Reklam & Pazarlama">Reklam & Pazarlama</option>
+                                <option value="Yemek & Mutfak">Yemek & Mutfak</option>
+                                <option value="Sarf Malzeme / Ofis">Sarf Malzeme / Ofis</option>
+                                <option value="Diğer">Diğer</option>
+                            </select>
                         </label>
-                        <label>İşlem Tarihi <input type="date" id="expenseDate" required></label>
+                        
+                        <label>Açıklama / Detay <input type="text" id="expenseDesc" placeholder="Örn: Mayıs ayı atölye kirası" required></label>
+                        
                         <div class="form-grid">
-                            <label>Miktar (varsa) <input type="number" id="expenseQty" step="0.01" min="0" value="0"></label>
+                            <label>İşlem Tarihi <input type="date" id="expenseDate" required></label>
                             <label>Tutar (TL) <input type="number" id="expenseAmount" step="0.01" min="0.01" required></label>
                         </div>
                         <label>Kim Ödedi?
@@ -301,7 +362,6 @@
                                 <option value="Ekrem">Ekrem (Cebinden)</option>
                             </select>
                         </label>
-                        <label>Açıklama (İsteğe Bağlı) <input type="text" id="expenseNote" placeholder="Ek not..."></label>
                         <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--danger-red), #ef4444);">Gideri Kaydet</button>
                     </form>
 
@@ -322,10 +382,10 @@
                             </label>
                         </div>
 
-                        <div class="panel-box">
+                        <div class="panel-box" style="overflow-x:auto;">
                             <h3>📋 Tüm Gider Kayıtları</h3>
                             <table class="data-table">
-                                <thead><tr><th>Tarih</th><th>Kalem</th><th>Kategori</th><th>Miktar</th><th>Tutar</th><th>Ödeyen</th><th>Sil</th></tr></thead>
+                                <thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Tutar</th><th>Ödeyen</th><th>Sil</th></tr></thead>
                                 <tbody id="expenseTableBody"></tbody>
                             </table>
                         </div>
