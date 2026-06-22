@@ -57,6 +57,11 @@
                         <div class="stat-value" id="dashNetProfit">₺0,00</div>
                         <p>Toplam Satış - Toplam Gider</p>
                     </div>
+                    <div class="stat-card" style="border-top:3px solid var(--accent-purple);">
+                        <h3>Atölye Kasası (Banka)</h3>
+                        <div class="stat-value" id="dashKasa" style="color:var(--text-bright);">₺0,00</div>
+                        <p>Ortak hesap / Kasa bakiyesi</p>
+                    </div>
                     <div class="stat-card">
                         <h3>Cari Mutabakat Durumu</h3>
                         <div class="stat-value alert" id="dashMutabakat" style="font-size:16px; line-height:1.4;">Hesaplanıyor...</div>
@@ -119,8 +124,9 @@
                         </div>
                         <label>Kim Ödedi?
                             <select id="quickExpensePayer" required>
-                                <option value="Semih">Semih</option>
-                                <option value="Ekrem">Ekrem</option>
+                                <option value="Atölye Kasası">Ortak Atölye Kasası</option>
+                                <option value="Semih">Semih (Cebinden)</option>
+                                <option value="Ekrem">Ekrem (Cebinden)</option>
                             </select>
                         </label>
                         <button type="submit" class="primary-button">Hızlı İşle</button>
@@ -128,11 +134,13 @@
                 </div>
 
                 <div class="panel-box" style="margin-top:5px; border-left:3px solid var(--accent-yellow);">
-                    <h3>⏳ Bekleyen Alacaklar (Borçlu Müşteriler)</h3>
-                    <table class="data-table">
-                        <thead><tr><th>Tarih</th><th>Müşteri</th><th>Halı Modeli</th><th>Toplam</th><th>Tahsil</th><th>Kalan</th><th>Aksiyon</th></tr></thead>
-                        <tbody id="dashDebtorsTableBody"></tbody>
-                    </table>
+                    <h3>⏳ Aktif Siparişler & Bekleyen Alacaklar</h3>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead><tr><th>Teslimat</th><th>Müşteri</th><th>Halı Modeli</th><th>Durum</th><th>Toplam</th><th>Kalan</th><th>Aksiyon</th></tr></thead>
+                            <tbody id="dashDebtorsTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
@@ -233,6 +241,7 @@
                         <label>Toplam Alım Tutarı (TL) <input type="number" id="stockTotalCost" step="0.01" min="0.01" required></label>
                         <label>Ödemeyi Kim Yaptı?
                             <select id="stockPayer" required>
+                                <option value="Atölye Kasası">Ortak Atölye Kasası</option>
                                 <option value="Semih">Semih (Cebinden Ödedi)</option>
                                 <option value="Ekrem">Ekrem (Cebinden Ödedi)</option>
                             </select>
@@ -287,8 +296,9 @@
                         </div>
                         <label>Kim Ödedi?
                             <select id="expensePayer" required>
-                                <option value="Semih">Semih</option>
-                                <option value="Ekrem">Ekrem</option>
+                                <option value="Atölye Kasası">Ortak Atölye Kasası</option>
+                                <option value="Semih">Semih (Cebinden)</option>
+                                <option value="Ekrem">Ekrem (Cebinden)</option>
                             </select>
                         </label>
                         <label>Açıklama (İsteğe Bağlı) <input type="text" id="expenseNote" placeholder="Ek not..."></label>
@@ -334,17 +344,30 @@
                 <div class="grid-1-2">
                     <form class="panel-box" id="saleForm">
                         <h3>Yeni Satış Kaydı</h3>
-                        <label>Müşteri Adı Soyadı <input type="text" id="saleCustomer" required></label>
+                        <label>Müşteri Adı Soyadı 
+                            <input type="text" id="saleCustomer" list="customerList" autocomplete="off" required>
+                            <datalist id="customerList"></datalist>
+                        </label>
                         <label>Halı Modeli / Ölçüsü <input type="text" id="saleModel" placeholder="Örn: Dalga Logolu 90x120" required></label>
                         <div class="form-grid">
+                            <label>Sipariş Durumu
+                                <select id="saleStatus" required>
+                                    <option value="Bekliyor">⏳ Bekliyor</option>
+                                    <option value="Üretimde">🧶 Üretimde</option>
+                                    <option value="Hazır">✅ Hazır</option>
+                                    <option value="Teslim Edildi">📦 Teslim Edildi</option>
+                                </select>
+                            </label>
+                            <label>Teslimat Tarihi <input type="date" id="saleDeliveryDate"></label>
                             <label>Satış Tarihi <input type="date" id="saleDate" required></label>
                             <label>Satış Fiyatı (TL) <input type="number" id="salePrice" step="0.01" min="0.01" required></label>
-                            <label>Tahsil Edilen (TL) <input type="number" id="salePaid" step="0.01" min="0" required></label>
+                            <label>İlk Tahsilat (TL) <input type="number" id="salePaid" step="0.01" min="0" required></label>
                             <label>Tahsilatı Kim Aldı?
                                 <select id="saleCollector">
-                                    <option value="">Belirtilmedi</option>
-                                    <option value="Semih">Semih</option>
-                                    <option value="Ekrem">Ekrem</option>
+                                    <option value="">Belirtilmedi / Alınmadı</option>
+                                    <option value="Atölye Kasası">Ortak Atölye Kasası</option>
+                                    <option value="Semih">Semih (Kendi Cebine)</option>
+                                    <option value="Ekrem">Ekrem (Kendi Cebine)</option>
                                 </select>
                             </label>
                         </div>
@@ -361,10 +384,10 @@
                             <button class="filter-btn" onclick="setSalesFilter('month', this)">Bu Ay</button>
                             <button class="filter-btn" onclick="setSalesFilter('debtor', this)">Borçlular</button>
                         </div>
-                        <div class="panel-box">
+                        <div class="panel-box" style="overflow-x:auto;">
                             <h3>Satış ve Sipariş Kayıtları</h3>
                             <table class="data-table">
-                                <thead><tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Satış</th><th>Tahsil</th><th>Kalan</th><th>İşlem</th></tr></thead>
+                                <thead><tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Durum</th><th>Satış</th><th>Kalan</th><th>İşlem</th></tr></thead>
                                 <tbody id="salesTableBody"></tbody>
                             </table>
                         </div>
@@ -385,10 +408,12 @@
                         <h3>Nakit Hareketi İşle</h3>
                         <label>İşlem Tipi
                             <select id="partType" required>
-                                <option value="cekim_semih">Semih - Atölye Kârından Para Çekti</option>
-                                <option value="cekim_ekrem">Ekrem - Atölye Kârından Para Çekti</option>
-                                <option value="odeme_ekrem_semihe">Ekrem, Semih'e Borcunu Ödedi (Cebinden)</option>
-                                <option value="odeme_semih_ekreme">Semih, Ekrem'e Borcunu Ödedi (Cebinden)</option>
+                                <option value="kasa_giris_semih">📥 Semih -> Kasaya Para Koydu (Sermaye)</option>
+                                <option value="kasa_giris_ekrem">📥 Ekrem -> Kasaya Para Koydu (Sermaye)</option>
+                                <option value="cekim_semih">📤 Semih -> Kasadan / Kârdan Para Çekti</option>
+                                <option value="cekim_ekrem">📤 Ekrem -> Kasadan / Kârdan Para Çekti</option>
+                                <option value="odeme_ekrem_semihe">🤝 Ekrem, Semih'e Borcunu Ödedi (Kişisel)</option>
+                                <option value="odeme_semih_ekreme">🤝 Semih, Ekrem'e Borcunu Ödedi (Kişisel)</option>
                             </select>
                         </label>
                         <div class="form-grid">
@@ -489,8 +514,9 @@
                     <label>Tahsilat Tarihi <input type="date" id="modalDate" required></label>
                     <label>Alınan Tutar (TL) <input type="number" id="modalAmount" step="0.01" min="0.01" required></label>
                 </div>
-                <label style="margin-top:10px;">Ödemeyi Kim Teslim Aldı?
+                <label style="margin-top:10px;">Ödemeyi Kim / Nereye Teslim Aldı?
                     <select id="modalCollector" required>
+                        <option value="Atölye Kasası">Ortak Atölye Kasası'na Girdi</option>
                         <option value="Semih">Semih (Kendi Cebine Aldı)</option>
                         <option value="Ekrem">Ekrem (Kendi Cebine Aldı)</option>
                     </select>

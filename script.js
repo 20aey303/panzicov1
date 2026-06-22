@@ -183,9 +183,12 @@ function initTabs() {
                 if (overlay) overlay.classList.remove("active");
             }
 
-            // Raporlar sekmesine geçince render et
+            // Tab geçişlerinde grafikleri yeniden çiz (gecikmeli)
             if (targetTab === 'reports') {
                 setTimeout(function() { renderReports(); }, 150);
+            }
+            if (targetTab === 'dashboard') {
+                setTimeout(function() { renderDashboardChart(); }, 150);
             }
         });
     });
@@ -458,6 +461,8 @@ function saveSaleRecord() {
     var model = document.getElementById("saleModel").value.trim();
     var price = parseFloat(document.getElementById("salePrice").value);
     var paid = parseFloat(document.getElementById("salePaid").value);
+    var status = document.getElementById("saleStatus") ? document.getElementById("saleStatus").value : 'Bekliyor';
+    var deliveryDate = document.getElementById("saleDeliveryDate") ? document.getElementById("saleDeliveryDate").value : '';
 
     if (!customer || !model) { showToast('warning', 'Eksik Bilgi', 'Müşteri adı ve halı modeli zorunludur.'); return; }
     if (isNaN(price) || price <= 0) { showToast('warning', 'Geçersiz Fiyat', 'Satış fiyatı sıfırdan büyük olmalıdır.'); return; }
@@ -470,6 +475,8 @@ function saveSaleRecord() {
     var saleData = {
         customer: customer,
         model: model,
+        status: status,
+        deliveryDate: deliveryDate,
         price: price,
         paid: paid,
         date: document.getElementById("saleDate").value,
@@ -504,6 +511,8 @@ function editSale(id) {
     document.getElementById("salePrice").value = sale.price || 0;
     document.getElementById("salePaid").value = sale.paid || 0;
     document.getElementById("saleDate").value = parsedDate;
+    if (document.getElementById("saleStatus")) document.getElementById("saleStatus").value = sale.status || 'Bekliyor';
+    if (document.getElementById("saleDeliveryDate")) document.getElementById("saleDeliveryDate").value = sale.deliveryDate || '';
 
     var collectorEl = document.getElementById("saleCollector");
     if (collectorEl && sale.collector) collectorEl.value = sale.collector;
@@ -639,13 +648,22 @@ function renderSalesTable() {
     filtered.forEach(function(s) {
         var remaining = s.price - s.paid;
         var tahsilatBtn = remaining > 0 ? '<button class="action-btn collect" onclick="receivePayment(\'' + s.id + '\')">💰</button>' : '';
+        
+        var statusColors = {
+            'Bekliyor': 'warning',
+            'Üretimde': 'info',
+            'Hazır': 'success',
+            'Teslim Edildi': 'success'
+        };
+        var badgeColor = statusColors[s.status] || 'warning';
+
         tbody.innerHTML +=
             '<tr>' +
                 '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td>' +
                 '<td style="font-weight:600;">' + s.customer + '</td>' +
                 '<td>' + s.model + '</td>' +
+                '<td><span class="badge ' + badgeColor + '">' + (s.status || 'Bekliyor') + '</span></td>' +
                 '<td>' + formatCurrency(s.price) + '</td>' +
-                '<td style="color:var(--accent-green)">' + formatCurrency(s.paid) + '</td>' +
                 '<td style="font-weight:bold; color:' + (remaining > 0 ? 'var(--accent-yellow)' : 'var(--text-muted)') + '">' + formatCurrency(remaining) + '</td>' +
                 '<td><div class="table-actions">' +
                     tahsilatBtn +
@@ -664,15 +682,19 @@ function renderDashboardDebtors() {
 
     state.sales.forEach(function(s) {
         var remaining = s.price - s.paid;
-        if (remaining > 0) {
+        // Eğer durumu Teslim Edildi değilse veya kalan borcu varsa göster
+        if (remaining > 0 || (s.status && s.status !== 'Teslim Edildi')) {
             hasDebtor = true;
+            var statusColors = { 'Bekliyor': 'warning', 'Üretimde': 'info', 'Hazır': 'success', 'Teslim Edildi': 'success' };
+            var badgeColor = statusColors[s.status] || 'warning';
+
             tbody.innerHTML +=
                 '<tr>' +
-                    '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.date) + '</td>' +
+                    '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(s.deliveryDate || s.date) + '</td>' +
                     '<td style="font-weight:700;">' + s.customer + '</td>' +
                     '<td>' + s.model + '</td>' +
+                    '<td><span class="badge ' + badgeColor + '">' + (s.status || 'Bekliyor') + '</span></td>' +
                     '<td>' + formatCurrency(s.price) + '</td>' +
-                    '<td style="color:var(--accent-green)">' + formatCurrency(s.paid) + '</td>' +
                     '<td style="color:var(--accent-yellow); font-weight:bold;">' + formatCurrency(remaining) + '</td>' +
                     '<td><button class="action-btn collect" onclick="receivePayment(\'' + s.id + '\')" style="font-size:11px;">💰 Tahsilat</button></td>' +
                 '</tr>';
@@ -680,7 +702,7 @@ function renderDashboardDebtors() {
     });
 
     if (!hasDebtor) {
-        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--accent-green); text-align:center; padding:20px;">✅ Bekleyen alacak yok.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="color:var(--accent-green); text-align:center; padding:20px;">✅ Aktif sipariş veya bekleyen alacak yok.</td></tr>';
     }
 }
 
@@ -718,8 +740,10 @@ function renderPartnerTable() {
     state.partners.forEach(function(p) {
         var islemMetni = "";
         var badgeClass = "danger";
-        if (p.type === "cekim_semih") islemMetni = "Semih (Kâr Çekimi)";
-        else if (p.type === "cekim_ekrem") islemMetni = "Ekrem (Kâr Çekimi)";
+        if (p.type === "cekim_semih") { islemMetni = "Semih (Kâr Çekti)"; }
+        else if (p.type === "cekim_ekrem") { islemMetni = "Ekrem (Kâr Çekti)"; }
+        else if (p.type === "kasa_giris_semih") { islemMetni = "Semih (Sermaye Koydu)"; badgeClass = "success"; }
+        else if (p.type === "kasa_giris_ekrem") { islemMetni = "Ekrem (Sermaye Koydu)"; badgeClass = "success"; }
         else if (p.type === "odeme_ekrem_semihe") { islemMetni = "Ekrem ➔ Semih (Borç Ödedi)"; badgeClass = "info"; }
         else if (p.type === "odeme_semih_ekreme") { islemMetni = "Semih ➔ Ekrem (Borç Ödedi)"; badgeClass = "info"; }
 
@@ -727,7 +751,7 @@ function renderPartnerTable() {
             '<tr>' +
                 '<td style="color:var(--text-muted); font-size:12px;">' + formatDateForDisplay(p.date) + '</td>' +
                 '<td><span class="badge ' + badgeClass + '">' + islemMetni + '</span></td>' +
-                '<td style="font-weight:bold; color:var(--danger-red)">' + formatCurrency(p.amount) + '</td>' +
+                '<td style="font-weight:bold; color:' + (badgeClass === 'success' ? 'var(--accent-green)' : 'var(--danger-red)') + '">' + formatCurrency(p.amount) + '</td>' +
                 '<td style="color:var(--text-muted); font-size:13px">' + p.note + '</td>' +
                 '<td><button class="delete-btn" onclick="deleteDocument(\'partners\', \'' + p.id + '\')">Sil</button></td>' +
             '</tr>';
@@ -779,7 +803,7 @@ function resetAllData() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  5. FİNANSAL MOTOR
+//  5. FİNANSAL MOTOR (GÜNCEL ATÖLYE KASASI ENTEGRASYONU)
 // ═══════════════════════════════════════════════════════════════
 function calculateFinancials() {
     var totalSales = 0, totalExpenses = 0, totalReceivables = 0;
@@ -787,12 +811,16 @@ function calculateFinancials() {
     var semihTahsilat = 0, ekremTahsilat = 0;
     var semihCekim = 0, ekremCekim = 0;
     var semihTransferBakiye = 0, ekremTransferBakiye = 0;
+    
+    // Atölye Kasası Bakiyesi
+    var atolyeKasasi = 0;
 
     state.stocks.forEach(function(s) {
         if (s.cost) {
             totalExpenses += s.cost;
-            if (s.payer === "Semih") semihHarcama += s.cost;
-            if (s.payer === "Ekrem") ekremHarcama += s.cost;
+            if (s.payer === "Semih") { semihHarcama += s.cost; }
+            if (s.payer === "Ekrem") { ekremHarcama += s.cost; }
+            if (s.payer === "Atölye Kasası") { atolyeKasasi -= s.cost; } // Kasadan çıkan para
         }
     });
 
@@ -802,13 +830,21 @@ function calculateFinancials() {
     });
 
     state.tahsilatlar.forEach(function(t) {
-        if (t.collector === "Semih") semihTahsilat += t.amount;
-        if (t.collector === "Ekrem") ekremTahsilat += t.amount;
+        if (t.collector === "Semih") { semihTahsilat += t.amount; }
+        if (t.collector === "Ekrem") { ekremTahsilat += t.amount; }
+        if (t.collector === "Atölye Kasası") { atolyeKasasi += t.amount; } // Kasaya giren tahsilat
     });
 
     state.partners.forEach(function(p) {
-        if (p.type === "cekim_semih") { semihTransferBakiye -= p.amount; semihCekim += p.amount; }
-        if (p.type === "cekim_ekrem") { ekremTransferBakiye -= p.amount; ekremCekim += p.amount; }
+        // Sermaye girişleri (Kasaya para koyma)
+        if (p.type === "kasa_giris_semih") { atolyeKasasi += p.amount; semihTransferBakiye += p.amount; }
+        if (p.type === "kasa_giris_ekrem") { atolyeKasasi += p.amount; ekremTransferBakiye += p.amount; }
+        
+        // Kasadan çekimler
+        if (p.type === "cekim_semih") { semihTransferBakiye -= p.amount; semihCekim += p.amount; atolyeKasasi -= p.amount; }
+        if (p.type === "cekim_ekrem") { ekremTransferBakiye -= p.amount; ekremCekim += p.amount; atolyeKasasi -= p.amount; }
+        
+        // Kişisel borç ödemeleri
         if (p.type === "odeme_ekrem_semihe") { ekremTransferBakiye += p.amount; semihTransferBakiye -= p.amount; }
         if (p.type === "odeme_semih_ekreme") { semihTransferBakiye += p.amount; ekremTransferBakiye -= p.amount; }
     });
@@ -833,9 +869,30 @@ function calculateFinancials() {
     return {
         netProfit: netProfit, totalSales: totalSales, totalReceivables: totalReceivables, totalExpenses: totalExpenses,
         semihHarcama: semihHarcama, ekremHarcama: ekremHarcama, semihTahsilat: semihTahsilat, ekremTahsilat: ekremTahsilat,
-        semihCekim: semihCekim, ekremCekim: ekremCekim,
+        semihCekim: semihCekim, ekremCekim: ekremCekim, atolyeKasasi: atolyeKasasi,
         mutabakatMetni: mutabakatMetni, mutabakatRenk: mutabakatRenk
     };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MÜŞTERİ LİSTESİ DOLDURMA (DATALIST)
+// ═══════════════════════════════════════════════════════════════
+function populateCustomerDatalist() {
+    var datalist = document.getElementById("customerList");
+    if (!datalist) return;
+    
+    var uniqueCustomers = [];
+    state.sales.forEach(function(s) {
+        if (s.customer && uniqueCustomers.indexOf(s.customer) === -1) {
+            uniqueCustomers.push(s.customer);
+        }
+    });
+    
+    var html = "";
+    uniqueCustomers.sort().forEach(function(c) {
+        html += '<option value="' + c + '"></option>';
+    });
+    datalist.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -879,10 +936,17 @@ function renderAll() {
     el = document.getElementById("dashEkremTahsilat");
     if (el) el.innerText = "Cebine Giren Tahsilat: " + formatCurrency(fin.ekremTahsilat);
 
+    el = document.getElementById("dashKasa");
+    if (el) {
+        el.innerText = formatCurrency(fin.atolyeKasasi);
+        el.style.color = fin.atolyeKasasi < 0 ? "var(--danger-red)" : "var(--accent-green)";
+    }
+
     el = document.getElementById("dashMutabakat");
     if (el) { el.innerHTML = fin.mutabakatMetni; el.style.color = fin.mutabakatRenk; }
 
-    // Tablolar
+    // Tablolar ve Listeler
+    populateCustomerDatalist();
     renderStockTable();
     renderExpenseTable();
     renderSalesTable();
