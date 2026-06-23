@@ -190,32 +190,15 @@
                     <h1>Ürün Kataloğu & Stok Yönetimi</h1>
                 </div>
 
-                <div class="grid-1-2" style="margin-bottom:25px;">
-                    <div class="panel-box" style="border-left:3px solid var(--accent-blue);">
-                        <h3>📖 1. Adım: Ürün / İplik Tanımlama</h3>
-                        <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px;">Kataloğa eklediğiniz ürünleri daha sonra stok alımlarında seçebilirsiniz.</p>
-                        <form id="catalogForm" class="form-grid" style="align-items:end;">
-                            <label>Ürün Tipi
-                                <select id="catalogType" onchange="toggleCatalogFields()" required>
-                                    <option value="İplik">🧶 İplik</option>
-                                    <option value="Kumaş">🪡 Kumaş</option>
-                                    <option value="Tutkal">🧴 Tutkal</option>
-                                    <option value="Diğer">📦 Diğer Üretim Malzemesi</option>
-                                </select>
-                            </label>
-                            <label><span id="catalogBrandLabel">Marka / Kategori</span> <input type="text" id="catalogBrand" placeholder="Örn: Nako, Kumaşçı" required></label>
-                            <label><span id="catalogModelLabel">Seri / Model Adı</span> <input type="text" id="catalogModel" placeholder="Örn: Vega, Tufting Kumaşı" required></label>
-                            
-                            <div id="yarnFields" style="display:contents;">
-                                <label>1 Top Gramajı (g) <input type="number" id="catalogGrams" placeholder="100"></label>
-                                <label>1 Top Metrajı (m) <input type="number" id="catalogMeters" placeholder="200"></label>
-                            </div>
-                            <div id="otherFields" style="display:none; grid-column: span 2;">
-                                <label>Birim <input type="text" id="catalogUnit" placeholder="Örn: m², Litre, Adet"></label>
-                            </div>
-                            <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--accent-blue), #4b96f7);">Kataloğa Ekle</button>
-                        </form>
-                    </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="primary-button" style="background:linear-gradient(135deg, var(--accent-blue), #4b96f7);" onclick="openModal('katalogModal')">📖 Yeni Katalog Ürünü Ekle</button>
+                    <button class="primary-button" style="background:linear-gradient(135deg, var(--accent-green), #2bc48a);" onclick="openModal('stokAlModal')">📥 Stok Satın Al (Depoya Gir)</button>
+                    <button class="primary-button" style="background:linear-gradient(135deg, var(--bg-panel-hover), var(--bg-panel)); color:var(--danger-red); border:1px solid var(--danger-red);" onclick="openModal('stokKullanModal')">📤 Stok Kullan (Üretimden Düş)</button>
+                </div>
+
+
+                <div style="margin-bottom:25px;">
+                    
                     
                     <div class="panel-box" style="overflow-y:auto; max-height: 400px;">
                         <h3>📋 Tanımlı Ürünler (Katalog Listesi)</h3>
@@ -236,89 +219,8 @@
                 </div> <!-- Closes panel-box -->
                 </div> <!-- Closes grid-1-2 -->
 
-                <div class="grid-1-2">
-                    <div>
-                        <!-- Satın Alım -->
-                        <form class="panel-box" id="stockBuyForm" style="margin-bottom: 20px;">
-                            <h3>📥 2. Adım: Stok Satın Al (Depoya Gir)</h3>
-                            <label>Katalogdan Ürün Seç
-                                <input type="text" id="stockItemSearch" list="catalogBuyList" placeholder="Aramak için yazın..." autocomplete="off" onchange="handleStockBuySelect()" required>
-                                <datalist id="catalogBuyList"></datalist>
-                                <input type="hidden" id="stockItemSelect" required>
-                            </label>
-                            
-                            <div id="stockBuyYarnFields" class="form-grid" style="display:none; margin-top:10px; padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border-left:2px solid var(--accent-blue);">
-                                <label>Renk Adı <input type="text" id="stockColorName" placeholder="Örn: Açık Mavi"></label>
-                                <label>Renk Kodu <input type="text" id="stockColorCode" placeholder="Örn: 10543"></label>
-                            </div>
-                            
-                            <div id="stockBuyFabricFields" class="form-grid" style="display:none; margin-top:10px; padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border-left:2px solid var(--accent-purple);">
-                                <label>Kumaş Eni (cm) <input type="number" id="stockFabricW" placeholder="Örn: 150" min="1"></label>
-                                <label>Kumaş Boyu (cm) <input type="number" id="stockFabricH" placeholder="Örn: 120" min="1"></label>
-                            </div>
-
-                            <div class="form-grid" style="margin-top:10px;">
-                                <label>İşlem Tarihi <input type="date" id="stockDate" required></label>
-                                <label>Alınan Miktar / Top / Parça <input type="number" id="stockQty" step="0.01" min="0.01" required></label>
-                            </div>
-                            <label>Toplam Alım Maliyeti (TL) <input type="number" id="stockTotalCost" step="0.01" min="0" required></label>
-                            <label>Ödemeyi Kim / Nereden Yaptı?
-                                <select id="stockPayer" required>
-                                    <option value="Atölye Kasası">Ortak Atölye Kasası</option>
-                                    <option value="Semih">Semih (Kendi Cebinden)</option>
-                                    <option value="Ekrem">Ekrem (Kendi Cebinden)</option>
-                                </select>
-                            </label>
-                            <input type="hidden" id="editingStockBuyId">
-                            <div style="display:flex; gap:10px;">
-                                <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--accent-green), #2bc48a);">Stoğa Ekle & Kaydet</button>
-                                <button type="button" id="cancelStockBuyBtn" class="primary-button" style="display:none; background:var(--bg-panel-hover); color:var(--text-main);" onclick="cancelEditStock('buy')">İptal</button>
-                            </div>
-                        </form>
-
-                        <!-- Kullanım (Düşme) -->
-                        <form class="panel-box" id="stockUseForm" style="border: 1px dashed rgba(248,113,113,0.3);">
-                            <h3>📤 Üretimde Stok Kullan (Stoktan Düş)</h3>
-                            <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Kullanımlarda para çıkışı olmaz, sadece mevcut envanterden miktar eksilir.</p>
-                            <label>Mevcut Stoklardan Seç
-                                <input type="text" id="stockUseSearch" list="catalogUseList" placeholder="Aramak için yazın..." autocomplete="off" onchange="handleStockUseSelect()" required>
-                                <datalist id="catalogUseList"></datalist>
-                                <input type="hidden" id="stockUseSelect" required>
-                            </label>
-                            
-                            <div id="stockUseTypeOptions" style="display:none; margin-bottom:14px; gap:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px;">
-                                <label style="flex-direction:row; gap:5px; align-items:center; margin:0;"><input type="radio" name="fabricUseType" value="full" checked onchange="toggleFabricUseFields()"> Kumaşın Tamamını Kullan</label>
-                                <label style="flex-direction:row; gap:5px; align-items:center; margin:0;"><input type="radio" name="fabricUseType" value="partial" onchange="toggleFabricUseFields()"> Kumaştan Parça Kes</label>
-                            </div>
-
-                            <div id="fabricPartialFields" class="form-grid" style="display:none; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border-left:2px solid var(--accent-purple); margin-bottom:14px;">
-                                <label>Kullanılan Ölçü (En x Boy)
-                                    <div style="display:flex; gap:5px;">
-                                        <input type="number" id="fabUseW" placeholder="En" min="1" style="flex:1;">
-                                        <input type="number" id="fabUseH" placeholder="Boy" min="1" style="flex:1;">
-                                    </div>
-                                </label>
-                                <label>Kalan Yeni Parçanın Ölçüsü (En x Boy)
-                                    <div style="display:flex; gap:5px;">
-                                        <input type="number" id="fabRemW" placeholder="En" min="0" style="flex:1;">
-                                        <input type="number" id="fabRemH" placeholder="Boy" min="0" style="flex:1;">
-                                    </div>
-                                </label>
-                            </div>
-
-                            <div class="form-grid">
-                                <label>Kullanım Tarihi <input type="date" id="stockUseDate" required></label>
-                                <label id="stockUseQtyLabel">Kullanılan Miktar <input type="number" id="stockUseQty" step="0.01" min="0.01" required></label>
-                            </div>
-                            <input type="hidden" id="editingStockUseId">
-                            <div style="display:flex; gap:10px;">
-                                <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--bg-panel-hover), var(--bg-panel)); color:var(--danger-red); border:1px solid var(--danger-red);">Stoktan Düş</button>
-                                <button type="button" id="cancelStockUseBtn" class="primary-button" style="display:none; background:var(--bg-panel-hover); color:var(--text-main);" onclick="cancelEditStock('use')">İptal</button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div class="panel-box">
+                <div style="margin-bottom:25px;">
+                    <div class="panel-box" style="overflow-y:auto; max-height: 400px;">
                         <h3>📦 Canlı Envanter (Renk Kodlu Stoklar)</h3>
                         <div class="search-bar" style="margin-bottom: 10px;">
                             <input type="text" id="stockSearchInput" placeholder="Marka, model veya renk kodu ara..." oninput="renderStockTable()">
@@ -336,7 +238,7 @@
                 </div>
 
                 <!-- Son Stok Hareketleri (Geçmiş) -->
-                <div class="panel-box" style="margin-top:25px; overflow-x:auto;">
+                <div class="panel-box" style="margin-top:25px; overflow-x:auto; overflow-y:auto; max-height: 400px;">
                     <h3>🕒 Son Stok Hareketleri (Geçmiş)</h3>
                     <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Envanteri düzeltmek için yanlış girdiğiniz alım/kullanım hareketini buradan düzenleyebilir veya silebilirsiniz.</p>
                     <div class="table-responsive">
@@ -696,5 +598,134 @@
     <script src="js/sales_v5.js"></script>
     <script src="js/dashboard.js"></script>
     <script src="js/main.js"></script>
+
+    <!-- Katalog Ekle Modal -->
+    <div id="katalogModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📖 Yeni Katalog Ürünü Ekle</h2>
+                <button class="modal-close" onclick="closeModal('katalogModal')">✕</button>
+            </div>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px;">Kataloğa eklediğiniz ürünleri daha sonra stok alımlarında seçebilirsiniz.</p>
+            <form id="catalogForm" class="form-grid" style="align-items:end;">
+                            <label>Ürün Tipi
+                                <select id="catalogType" onchange="toggleCatalogFields()" required>
+                                    <option value="İplik">🧶 İplik</option>
+                                    <option value="Kumaş">🪡 Kumaş</option>
+                                    <option value="Tutkal">🧴 Tutkal</option>
+                                    <option value="Diğer">📦 Diğer Üretim Malzemesi</option>
+                                </select>
+                            </label>
+                            <label><span id="catalogBrandLabel">Marka / Kategori</span> <input type="text" id="catalogBrand" placeholder="Örn: Nako, Kumaşçı" required></label>
+                            <label><span id="catalogModelLabel">Seri / Model Adı</span> <input type="text" id="catalogModel" placeholder="Örn: Vega, Tufting Kumaşı" required></label>
+                            
+                            <div id="yarnFields" style="display:contents;">
+                                <label>1 Top Gramajı (g) <input type="number" id="catalogGrams" placeholder="100"></label>
+                                <label>1 Top Metrajı (m) <input type="number" id="catalogMeters" placeholder="200"></label>
+                            </div>
+                            <div id="otherFields" style="display:none; grid-column: span 2;">
+                                <label>Birim <input type="text" id="catalogUnit" placeholder="Örn: m², Litre, Adet"></label>
+                            </div>
+                            <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--accent-blue), #4b96f7);">Kataloğa Ekle</button>
+                        </form>
+        </div>
+    </div>
+
+    <!-- Stok Al Modal -->
+    <div id="stokAlModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📥 Stok Satın Al (Depoya Gir)</h2>
+                <button class="modal-close" onclick="closeModal('stokAlModal')">✕</button>
+            </div>
+            <form id="stockBuyForm" >
+                            
+                            <label>Katalogdan Ürün Seç
+                                <input type="text" id="stockItemSearch" list="catalogBuyList" placeholder="Aramak için yazın..." autocomplete="off" onchange="handleStockBuySelect()" required>
+                                <datalist id="catalogBuyList"></datalist>
+                                <input type="hidden" id="stockItemSelect" required>
+                            </label>
+                            
+                            <div id="stockBuyYarnFields" class="form-grid" style="display:none; margin-top:10px; padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border-left:2px solid var(--accent-blue);">
+                                <label>Renk Adı <input type="text" id="stockColorName" placeholder="Örn: Açık Mavi"></label>
+                                <label>Renk Kodu <input type="text" id="stockColorCode" placeholder="Örn: 10543"></label>
+                            </div>
+                            
+                            <div id="stockBuyFabricFields" class="form-grid" style="display:none; margin-top:10px; padding:10px; background:rgba(255,255,255,0.02); border-radius:6px; border-left:2px solid var(--accent-purple);">
+                                <label>Kumaş Eni (cm) <input type="number" id="stockFabricW" placeholder="Örn: 150" min="1"></label>
+                                <label>Kumaş Boyu (cm) <input type="number" id="stockFabricH" placeholder="Örn: 120" min="1"></label>
+                            </div>
+
+                            <div class="form-grid" style="margin-top:10px;">
+                                <label>İşlem Tarihi <input type="date" id="stockDate" required></label>
+                                <label>Alınan Miktar / Top / Parça <input type="number" id="stockQty" step="0.01" min="0.01" required></label>
+                            </div>
+                            <label>Toplam Alım Maliyeti (TL) <input type="number" id="stockTotalCost" step="0.01" min="0" required></label>
+                            <label>Ödemeyi Kim / Nereden Yaptı?
+                                <select id="stockPayer" required>
+                                    <option value="Atölye Kasası">Ortak Atölye Kasası</option>
+                                    <option value="Semih">Semih (Kendi Cebinden)</option>
+                                    <option value="Ekrem">Ekrem (Kendi Cebinden)</option>
+                                </select>
+                            </label>
+                            <input type="hidden" id="editingStockBuyId">
+                            <div style="display:flex; gap:10px;">
+                                <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--accent-green), #2bc48a);">Stoğa Ekle & Kaydet</button>
+                                <button type="button" id="cancelStockBuyBtn" class="primary-button" style="display:none; background:var(--bg-panel-hover); color:var(--text-main);" onclick="cancelEditStock('buy')">İptal</button>
+                            </div>
+                        </form>
+        </div>
+    </div>
+
+    <!-- Stok Kullan Modal -->
+    <div id="stokKullanModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📤 Üretimde Stok Kullan (Stoktan Düş)</h2>
+                <button class="modal-close" onclick="closeModal('stokKullanModal')">✕</button>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Kullanımlarda para çıkışı olmaz, sadece mevcut envanterden miktar eksilir.</p>
+            <form id="stockUseForm" >
+                            
+                            
+                            <label>Mevcut Stoklardan Seç
+                                <input type="text" id="stockUseSearch" list="catalogUseList" placeholder="Aramak için yazın..." autocomplete="off" onchange="handleStockUseSelect()" required>
+                                <datalist id="catalogUseList"></datalist>
+                                <input type="hidden" id="stockUseSelect" required>
+                            </label>
+                            
+                            <div id="stockUseTypeOptions" style="display:none; margin-bottom:14px; gap:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px;">
+                                <label style="flex-direction:row; gap:5px; align-items:center; margin:0;"><input type="radio" name="fabricUseType" value="full" checked onchange="toggleFabricUseFields()"> Kumaşın Tamamını Kullan</label>
+                                <label style="flex-direction:row; gap:5px; align-items:center; margin:0;"><input type="radio" name="fabricUseType" value="partial" onchange="toggleFabricUseFields()"> Kumaştan Parça Kes</label>
+                            </div>
+
+                            <div id="fabricPartialFields" class="form-grid" style="display:none; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border-left:2px solid var(--accent-purple); margin-bottom:14px;">
+                                <label>Kullanılan Ölçü (En x Boy)
+                                    <div style="display:flex; gap:5px;">
+                                        <input type="number" id="fabUseW" placeholder="En" min="1" style="flex:1;">
+                                        <input type="number" id="fabUseH" placeholder="Boy" min="1" style="flex:1;">
+                                    </div>
+                                </label>
+                                <label>Kalan Yeni Parçanın Ölçüsü (En x Boy)
+                                    <div style="display:flex; gap:5px;">
+                                        <input type="number" id="fabRemW" placeholder="En" min="0" style="flex:1;">
+                                        <input type="number" id="fabRemH" placeholder="Boy" min="0" style="flex:1;">
+                                    </div>
+                                </label>
+                            </div>
+
+                            <div class="form-grid">
+                                <label>Kullanım Tarihi <input type="date" id="stockUseDate" required></label>
+                                <label id="stockUseQtyLabel">Kullanılan Miktar <input type="number" id="stockUseQty" step="0.01" min="0.01" required></label>
+                            </div>
+                            <input type="hidden" id="editingStockUseId">
+                            <div style="display:flex; gap:10px;">
+                                <button type="submit" class="primary-button" style="background:linear-gradient(135deg, var(--bg-panel-hover), var(--bg-panel)); color:var(--danger-red); border:1px solid var(--danger-red);">Stoktan Düş</button>
+                                <button type="button" id="cancelStockUseBtn" class="primary-button" style="display:none; background:var(--bg-panel-hover); color:var(--text-main);" onclick="cancelEditStock('use')">İptal</button>
+                            </div>
+                        </form>
+        </div>
+    </div>
+
 </body>
 </html>

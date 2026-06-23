@@ -142,6 +142,7 @@ function addStockBuy() {
         db.collection("stocks").doc(editingId).update(data).then(function() {
             showToast('success', 'Güncellendi', 'Stok alım kaydı güncellendi.');
             cancelEditStock('buy');
+            if(typeof closeModal === 'function') closeModal('stokAlModal');
         });
     } else {
         db.collection("stocks").add(data).then(function() {
@@ -149,6 +150,7 @@ function addStockBuy() {
             document.getElementById("stockBuyForm").reset();
             toggleStockBuyFields();
             setDefaultDates();
+            if(typeof closeModal === 'function') closeModal('stokAlModal');
         });
     }
 }
@@ -244,6 +246,7 @@ function addStockUse() {
         db.collection("stocks").doc(editingId).update(data).then(function() {
             showToast('info', 'Güncellendi', 'Stok kullanım kaydı güncellendi.');
             cancelEditStock('use');
+            if(typeof closeModal === 'function') closeModal('stokKullanModal');
         });
     } else {
         if (isPartialCut) {
@@ -258,6 +261,7 @@ function addStockUse() {
                 document.getElementById("stockUseForm").reset();
                 toggleFabricUseFields();
                 setDefaultDates();
+                if(typeof closeModal === 'function') closeModal('stokKullanModal');
             });
         } else {
             db.collection("stocks").add(data).then(function() {
@@ -265,6 +269,7 @@ function addStockUse() {
                 document.getElementById("stockUseForm").reset();
                 toggleFabricUseFields();
                 setDefaultDates();
+                if(typeof closeModal === 'function') closeModal('stokKullanModal');
             });
         }
     }

@@ -62,6 +62,7 @@ function addCatalogItem() {
         showToast('success', 'Katalog Güncellendi', '"' + data.name + '" kataloğa eklendi.');
         document.getElementById("catalogForm").reset();
         toggleCatalogFields();
+        if(typeof closeModal === 'function') closeModal('katalogModal');
     });
 }
 

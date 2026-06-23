@@ -146,3 +146,17 @@ function renderAll() {
 //  6. DETAY MODALLARI
 // ═══════════════════════════════════════════════════════════════
 
+
+function openModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('active');
+    }
+}
+
+function closeModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
