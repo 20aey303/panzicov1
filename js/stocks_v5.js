@@ -111,7 +111,7 @@ function addStockBuy() {
         unit: unit,
         cost: cost,
         payer: document.getElementById("stockPayer").value,
-        date: document.getElementById("stockDate").value,
+        date: getDateWithTime("stockDate"),
         isPurchase: true
     };
 
@@ -195,7 +195,7 @@ function addStockUse() {
         qty: -qty, 
         unit: unit,
         cost: 0, 
-        date: document.getElementById("stockUseDate").value,
+        date: getDateWithTime("stockUseDate"),
         isUsage: true
     };
 

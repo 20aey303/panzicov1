@@ -187,3 +187,11 @@ function sortDataByDate() {
     state.tahsilatlar.sort(sorter);
 }
 
+
+function getDateWithTime(id) {
+    var val = document.getElementById(id).value;
+    if (!val) return "";
+    var now = new Date();
+    var timeStr = "T" + String(now.getHours()).padStart(2, '0') + ":" + String(now.getMinutes()).padStart(2, '0') + ":" + String(now.getSeconds()).padStart(2, '0');
+    return val + timeStr;
+}

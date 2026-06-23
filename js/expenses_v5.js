@@ -16,7 +16,7 @@ function addExpense() {
                 name: desc,
                 cost: amount,
                 payer: document.getElementById("expensePayer").value,
-                date: document.getElementById("expenseDate").value
+                date: getDateWithTime("expenseDate")
             }).then(function() {
                 showToast('success', 'Güncellendi', 'Eski gider kaydı başarıyla güncellendi.');
                 cancelEditExpense();
@@ -27,7 +27,7 @@ function addExpense() {
                 description: desc,
                 amount: amount,
                 payer: document.getElementById("expensePayer").value,
-                date: document.getElementById("expenseDate").value
+                date: getDateWithTime("expenseDate")
             }).then(function() {
                 showToast('success', 'Güncellendi', 'Gider başarıyla güncellendi.');
                 cancelEditExpense();
@@ -39,7 +39,7 @@ function addExpense() {
             description: desc,
             amount: amount,
             payer: document.getElementById("expensePayer").value,
-            date: document.getElementById("expenseDate").value
+            date: getDateWithTime("expenseDate")
         }).then(function() {
             showToast('success', 'Gider Kaydedildi', formatCurrency(amount) + ' tutarında gider işlendi.');
             document.getElementById("expenseForm").reset();

@@ -21,7 +21,7 @@ function saveSaleRecord() {
         deliveryDate: deliveryDate,
         price: price,
         paid: paid,
-        date: document.getElementById("saleDate").value,
+        date: getDateWithTime("saleDate"),
         collector: collector
     };
 
@@ -108,7 +108,7 @@ function submitTahsilatModal() {
 
     var amount = parseFloat(document.getElementById("modalAmount").value);
     var collector = document.getElementById("modalCollector").value;
-    var tDate = document.getElementById("modalDate").value;
+    var tDate = getDateWithTime("modalDate");
     var remaining = sale.price - sale.paid;
 
     if (isNaN(amount) || amount <= 0 || amount > remaining) {
@@ -268,7 +268,7 @@ function addPartnerTransaction() {
         type: document.getElementById("partType").value,
         amount: amount,
         note: note,
-        date: document.getElementById("partDate").value
+        date: getDateWithTime("partDate")
     }).then(function() {
         showToast('success', 'Cari Güncellendi', formatCurrency(amount) + ' işlendi.');
         document.getElementById("partnerForm").reset();
