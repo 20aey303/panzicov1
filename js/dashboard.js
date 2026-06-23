@@ -30,6 +30,11 @@ function calculateFinancials() {
     state.sales.forEach(function(s) {
         totalSales += s.price;
         totalReceivables += (s.price - s.paid);
+        if (s.paid && s.paid > 0) {
+            if (s.collector === "Semih") { semihTahsilat += s.paid; }
+            if (s.collector === "Ekrem") { ekremTahsilat += s.paid; }
+            if (s.collector === "Atölye Kasası") { atolyeKasasi += s.paid; }
+        }
     });
 
     state.tahsilatlar.forEach(function(t) {
