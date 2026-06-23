@@ -217,7 +217,7 @@ function renderSalesTable() {
                 '<td><div class="table-actions">' +
                     tahsilatBtn +
                     '<button class="action-btn edit" onclick="editSale(\'' + s.id + '\')">✏️</button>' +
-                    '<button class="delete-btn" onclick="deleteDocument(\'sales\', \'' + s.id + '\')">🗑️</button>' +
+                    '<button class="delete-btn" onclick="deleteSaleRecord(\'' + s.id + '\')">🗑️</button>' +
                 '</div></td>' +
             '</tr>';
     });
@@ -420,3 +420,23 @@ function closeDetailModal() {
 // ═══════════════════════════════════════════════════════════════
 //  7. STOK ALARMLARI
 // ═══════════════════════════════════════════════════════════════
+
+function deleteSaleRecord(saleId) {
+    if (confirm("Bu satışı ve ona ait tüm sonradan girilen tahsilatları kalıcı olarak silmek istediğinize emin misiniz?")) {
+        db.collection("sales").doc(saleId).delete().then(function() {
+            db.collection("tahsilatlar").where("saleId", "==", saleId).get().then(function(querySnapshot) {
+                var batch = db.batch();
+                querySnapshot.forEach(function(doc) {
+                    batch.delete(doc.ref);
+                });
+                return batch.commit();
+            }).then(function() {
+                showToast('info', 'Kayıt Silindi', 'Satış ve ilişkili tüm tahsilatlar silindi.');
+            }).catch(function(err) {
+                showToast('error', 'Tahsilat Silme Hatası', err.message);
+            });
+        }).catch(function(err) {
+            showToast('error', 'Silme Hatası', err.message);
+        });
+    }
+}
