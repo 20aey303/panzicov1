@@ -27,11 +27,16 @@ function calculateFinancials() {
         }
     });
 
+    var validSaleIds = state.sales.map(function(s) { return s.id; });
+    var validTahsilatlar = state.tahsilatlar.filter(function(t) {
+        return !t.saleId || validSaleIds.indexOf(t.saleId) !== -1;
+    });
+
     state.sales.forEach(function(s) {
         totalSales += s.price;
         totalReceivables += (s.price - s.paid);
         var totalLaterTahsilat = 0;
-        state.tahsilatlar.forEach(function(t) {
+        validTahsilatlar.forEach(function(t) {
             if (t.saleId === s.id) {
                 totalLaterTahsilat += t.amount;
             }
@@ -45,7 +50,7 @@ function calculateFinancials() {
         }
     });
 
-    state.tahsilatlar.forEach(function(t) {
+    validTahsilatlar.forEach(function(t) {
         if (t.collector === "Semih") { semihTahsilat += t.amount; }
         if (t.collector === "Ekrem") { ekremTahsilat += t.amount; }
         if (t.collector === "Atölye Kasası") { atolyeKasasi += t.amount; } // Kasaya giren tahsilat
