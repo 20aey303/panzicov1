@@ -160,8 +160,8 @@ function renderSalesTable() {
     // Arama
     if (searchTerm) {
         filtered = filtered.filter(function(s) {
-            return (s.customer || '').toLowerCase().indexOf(searchTerm) >= 0 ||
-                   (s.model || '').toLowerCase().indexOf(searchTerm) >= 0;
+            var searchStr = ((s.customer || '') + ' ' + (s.model || '') + ' ' + (s.status || '')).toLowerCase();
+            return searchStr.indexOf(searchTerm) >= 0;
         });
     }
 
@@ -179,15 +179,22 @@ function renderSalesTable() {
         filtered = filtered.filter(function(s) { return (s.price - s.paid) > 0; });
     }
 
-    // Tarih sıralama
-    filtered.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
+    // `balance` ve `total` (price) alanlarını dynamicSort'un anlayabilmesi için map'leyelim
+    var sortableFiltered = filtered.map(function(s) {
+        var s2 = Object.assign({}, s);
+        s2.balance = s.price - s.paid;
+        s2.total = s.price;
+        return s2;
+    });
 
-    if (filtered.length === 0) {
+    var sorted = dynamicSort(sortableFiltered, 'sales');
+
+    if (sorted.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted); padding:20px;">🧾 Gösterilecek satış kaydı yok.</td></tr>';
         return;
     }
 
-    filtered.forEach(function(s) {
+    sorted.forEach(function(s) {
         var remaining = s.price - s.paid;
         var tahsilatBtn = remaining > 0 ? '<button class="action-btn collect" onclick="receivePayment(\'' + s.id + '\')">💰</button>' : '';
         

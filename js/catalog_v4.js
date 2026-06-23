@@ -81,15 +81,21 @@ function renderCatalogTable() {
     if (!tbody) return;
     tbody.innerHTML = "";
 
-    if (state.catalog.length === 0) {
+    var searchInput = document.getElementById("catalogSearchInput");
+    var searchText = searchInput ? searchInput.value.toLowerCase() : "";
+
+    var filteredCatalog = state.catalog.filter(function(c) {
+        if (!searchText) return true;
+        var t = ((c.name || "") + " " + (c.type || "")).toLowerCase();
+        return t.indexOf(searchText) > -1;
+    });
+
+    if (filteredCatalog.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--text-muted); padding:20px;">Henüz tanımlı ürün yok.</td></tr>';
         return;
     }
 
-    // Sort by createdAt descending so newest are at the top
-    var sortedCatalog = state.catalog.slice().sort(function(a, b) {
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-    });
+    var sortedCatalog = dynamicSort(filteredCatalog, 'catalog');
 
     sortedCatalog.forEach(function(c) {
         var detailText = "";

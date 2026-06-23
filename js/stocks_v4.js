@@ -322,9 +322,18 @@ function renderStockTable() {
     var alertHtml = "";
     var tableHtml = "";
 
-    Object.keys(stockSummary).forEach(function(key) {
-        var item = stockSummary[key];
-        
+    var stockArr = Object.keys(stockSummary).map(function(key) {
+        return stockSummary[key];
+    });
+
+    var filteredArr = stockArr.filter(function(item) {
+        var searchStr = (item.model + " " + item.brand + " " + item.colorName + " " + item.colorCode + " " + item.fabricW + " " + item.fabricH).toLowerCase();
+        return !searchTerm || searchStr.indexOf(searchTerm) > -1;
+    });
+
+    var sortedArr = dynamicSort(filteredArr, 'stocks');
+
+    sortedArr.forEach(function(item) {
         var displayName = item.model;
         var displayColor = "";
         
@@ -346,12 +355,7 @@ function renderStockTable() {
         }
 
         if (item.totalQty > 0) {
-            useListHtml += '<option data-id="' + key + '" value="' + displayName + ' (Mevcut: ' + item.totalQty.toFixed(1) + ' ' + item.unit + ')"></option>';
-        }
-
-        if (searchTerm) {
-            var searchStr = (item.model + " " + item.colorName + " " + item.colorCode + " " + item.fabricW + " " + item.fabricH).toLowerCase();
-            if (searchStr.indexOf(searchTerm) === -1) return;
+            useListHtml += '<option data-id="' + item.catalogId + '" value="' + displayName + ' (Mevcut: ' + item.totalQty.toFixed(1) + ' ' + item.unit + ')"></option>';
         }
 
         var isCritical = item.totalQty <= 2;
@@ -382,18 +386,26 @@ function renderStockHistoryTable() {
     if (!tbody) return;
     tbody.innerHTML = "";
 
+    var searchInput = document.getElementById("stockHistorySearchInput");
+    var searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
     var history = state.stocks.filter(function(s) {
-        return s.isPurchase || s.isUsage || (s.qty !== undefined && s.qty !== 0);
+        if (!(s.isPurchase || s.isUsage || (s.qty !== undefined && s.qty !== 0))) return false;
+        if (!searchTerm) return true;
+        
+        var actionStr = s.isPurchase ? "alım" : (s.isUsage ? "kullanım" : "kayıt");
+        var searchStr = ((s.name || "") + " " + (s.colorName || "") + " " + (s.colorCode || "") + " " + (s.actionDetails || "") + " " + actionStr).toLowerCase();
+        return searchStr.indexOf(searchTerm) > -1;
     });
 
-    history.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
+    var sortedHistory = dynamicSort(history, 'stockHistory');
 
-    if (history.length === 0) {
+    if (sortedHistory.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">Henüz stok hareketi yok.</td></tr>';
         return;
     }
 
-    history.forEach(function(s) {
+    sortedHistory.forEach(function(s) {
         var actionText = "";
         var actionClass = "";
         if (s.isPurchase || s.qty > 0) { actionText = "Alım (+)"; actionClass = "success"; }

@@ -1165,3 +1165,35 @@ select {
     background: var(--bg-panel);
     box-shadow: 0 1px 0 var(--border-color);
 }
+
+/* ═══════════════════════════════════════════
+   SORTING & FILTERING
+   ═══════════════════════════════════════════ */
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+    position: relative;
+    padding-right: 18px !important;
+}
+.sortable:hover {
+    color: var(--accent-blue);
+}
+.sort-icon {
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    opacity: 0.5;
+}
+.sortable.asc .sort-icon::after {
+    content: "▲";
+    opacity: 1;
+    color: var(--accent-blue);
+}
+.sortable.desc .sort-icon::after {
+    content: "▼";
+    opacity: 1;
+    color: var(--accent-blue);
+}

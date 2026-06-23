@@ -114,15 +114,24 @@ function renderExpenseTable() {
         if (endVal) filteredList = filteredList.filter(function(s) { return s.date <= endVal; });
     }
 
-    // Tarih sıralaması (en yeni üstte)
-    filteredList.sort(function(a, b) { return new Date(b.date || 0) - new Date(a.date || 0); });
+    var searchInput = document.getElementById("expenseSearchInput");
+    var searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    if (searchTerm) {
+        filteredList = filteredList.filter(function(e) {
+            var searchStr = ((e.category || "") + " " + (e.description || "") + " " + (e.payer || "")).toLowerCase();
+            return searchStr.indexOf(searchTerm) > -1;
+        });
+    }
 
-    if (filteredList.length === 0) {
+    // Tabloyu map ile "desc" özelliğini dahil ederek formatla çünkü sortState'te desc var
+    var sortedList = dynamicSort(filteredList, 'expenses');
+
+    if (sortedList.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:20px;">📝 Gösterilecek gider kaydı yok.</td></tr>';
         return;
     }
 
-    filteredList.forEach(function(e) {
+    sortedList.forEach(function(e) {
         var payerIcon = "";
         if (e.payer === "Semih") { payerIcon = "🟦 Semih"; }
         else if (e.payer === "Ekrem") { payerIcon = "🟪 Ekrem"; }

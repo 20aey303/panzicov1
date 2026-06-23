@@ -219,9 +219,17 @@
                     
                     <div class="panel-box" style="overflow-y:auto; max-height: 400px;">
                         <h3>📋 Tanımlı Ürünler (Katalog Listesi)</h3>
+                        <div class="search-bar" style="margin-bottom: 10px;">
+                            <input type="text" id="catalogSearchInput" placeholder="Marka, model veya ürün ara..." oninput="if(typeof renderCatalogTable === 'function') renderCatalogTable()">
+                        </div>
                         <div class="table-responsive">
                             <table class="data-table">
-                            <thead><tr><th>Tipi</th><th>Marka & Model</th><th>Detay</th><th>İşlem</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" data-sort-table="catalog" data-sort-col="type" onclick="handleSort('catalog', 'type')">Tipi <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort-table="catalog" data-sort-col="name" onclick="handleSort('catalog', 'name')">Marka & Model <span class="sort-icon"></span></th>
+                                <th>Detay</th>
+                                <th>İşlem</th>
+                            </tr></thead>
                             <tbody id="catalogTableBody"></tbody>
                         </table>
                     </div>
@@ -316,7 +324,12 @@
                             <input type="text" id="stockSearchInput" placeholder="Marka, model veya renk kodu ara..." oninput="renderStockTable()">
                         </div>
                         <table class="data-table">
-                            <thead><tr><th>Marka / Model</th><th>Renk / Kod</th><th>Stok</th><th>Durum</th></tr></thead>
+                            <thead><tr>
+                                <th class="sortable" data-sort-table="stocks" data-sort-col="name" onclick="handleSort('stocks', 'name')">Marka / Model <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort-table="stocks" data-sort-col="colorCode" onclick="handleSort('stocks', 'colorCode')">Renk / Kod <span class="sort-icon"></span></th>
+                                <th class="sortable" data-sort-table="stocks" data-sort-col="totalQty" onclick="handleSort('stocks', 'totalQty')">Stok <span class="sort-icon"></span></th>
+                                <th>Durum</th>
+                            </tr></thead>
                             <tbody id="stockTableBody"></tbody>
                         </table>
                     </div>
@@ -327,8 +340,18 @@
                     <h3>🕒 Son Stok Hareketleri (Geçmiş)</h3>
                     <p style="font-size:12px; color:var(--text-muted); margin-bottom:10px;">Envanteri düzeltmek için yanlış girdiğiniz alım/kullanım hareketini buradan düzenleyebilir veya silebilirsiniz.</p>
                     <div class="table-responsive">
+                        <div class="search-bar" style="margin-bottom: 10px;">
+                            <input type="text" id="stockHistorySearchInput" placeholder="Geçmiş işlemlerde ara..." oninput="if(typeof renderStockHistoryTable === 'function') renderStockHistoryTable()">
+                        </div>
                         <table class="data-table">
-                        <thead><tr><th>Tarih</th><th>İşlem Tipi</th><th>Ürün / Detay</th><th>Miktar</th><th>Maliyet</th><th>Aksiyon</th></tr></thead>
+                        <thead><tr>
+                            <th class="sortable" data-sort-table="stockHistory" data-sort-col="date" onclick="handleSort('stockHistory', 'date')">Tarih <span class="sort-icon"></span></th>
+                            <th>İşlem Tipi</th>
+                            <th class="sortable" data-sort-table="stockHistory" data-sort-col="name" onclick="handleSort('stockHistory', 'name')">Ürün / Detay <span class="sort-icon"></span></th>
+                            <th class="sortable" data-sort-table="stockHistory" data-sort-col="qty" onclick="handleSort('stockHistory', 'qty')">Miktar <span class="sort-icon"></span></th>
+                            <th class="sortable" data-sort-table="stockHistory" data-sort-col="cost" onclick="handleSort('stockHistory', 'cost')">Maliyet <span class="sort-icon"></span></th>
+                            <th>Aksiyon</th>
+                        </tr></thead>
                         <tbody id="stockHistoryTableBody"></tbody>
                     </table>
                 </div>
@@ -416,10 +439,20 @@
                             </label>
                         </div>
 
+                        <div class="search-bar" style="margin-bottom: 10px;">
+                            <input type="text" id="expenseSearchInput" placeholder="Giderlerde ara..." oninput="if(typeof renderExpenseTable === 'function') renderExpenseTable()">
+                        </div>
                         <div class="panel-box" style="overflow-x:auto;">
                             <h3>📋 Tüm Gider Kayıtları</h3>
                             <table class="data-table">
-                                <thead><tr><th>Tarih</th><th>Kategori</th><th>Açıklama</th><th>Tutar</th><th>Ödeyen</th><th>Sil</th></tr></thead>
+                                <thead><tr>
+                                    <th class="sortable" data-sort-table="expenses" data-sort-col="date" onclick="handleSort('expenses', 'date')">Tarih <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="expenses" data-sort-col="category" onclick="handleSort('expenses', 'category')">Kategori <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="expenses" data-sort-col="desc" onclick="handleSort('expenses', 'desc')">Açıklama <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="expenses" data-sort-col="amount" onclick="handleSort('expenses', 'amount')">Tutar <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="expenses" data-sort-col="payer" onclick="handleSort('expenses', 'payer')">Ödeyen <span class="sort-icon"></span></th>
+                                    <th>Sil</th>
+                                </tr></thead>
                                 <tbody id="expenseTableBody"></tbody>
                             </table>
                         </div>
@@ -474,14 +507,25 @@
                         </div>
                         <div class="filter-bar">
                             <button class="filter-btn active" onclick="setSalesFilter('all', this)">Tümü</button>
-                            <button class="filter-btn" onclick="setSalesFilter('week', this)">Bu Hafta</button>
+                                <button class="filter-btn" onclick="setSalesFilter('week', this)">Bu Hafta</button>
                             <button class="filter-btn" onclick="setSalesFilter('month', this)">Bu Ay</button>
                             <button class="filter-btn" onclick="setSalesFilter('debtor', this)">Borçlular</button>
                         </div>
                         <div class="panel-box" style="overflow-x:auto;">
-                            <h3>Satış ve Sipariş Kayıtları</h3>
+                            <div class="search-bar" style="margin-bottom: 10px;">
+                            <input type="text" id="salesSearchInput" placeholder="Müşteri, model veya durum ara..." oninput="if(typeof renderSalesTable === 'function') renderSalesTable()">
+                        </div>
+                        <div class="table-responsive">
                             <table class="data-table">
-                                <thead><tr><th>Tarih</th><th>Müşteri</th><th>Model</th><th>Durum</th><th>Satış</th><th>Kalan</th><th>İşlem</th></tr></thead>
+                                <thead><tr>
+                                    <th class="sortable" data-sort-table="sales" data-sort-col="date" onclick="handleSort('sales', 'date')">Tarih <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="sales" data-sort-col="customer" onclick="handleSort('sales', 'customer')">Müşteri <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="sales" data-sort-col="model" onclick="handleSort('sales', 'model')">Model <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="sales" data-sort-col="status" onclick="handleSort('sales', 'status')">Durum <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="sales" data-sort-col="total" onclick="handleSort('sales', 'total')">Satış <span class="sort-icon"></span></th>
+                                    <th class="sortable" data-sort-table="sales" data-sort-col="balance" onclick="handleSort('sales', 'balance')">Kalan <span class="sort-icon"></span></th>
+                                    <th>İşlem</th>
+                                </tr></thead>
                                 <tbody id="salesTableBody"></tbody>
                             </table>
                         </div>
